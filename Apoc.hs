@@ -23,7 +23,7 @@ import System.IO.Unsafe
 import ApocTools
 import ApocStrategyHuman
 
-
+import StartupMod
 ---Main-------------------------------------------------------------
 
 -- | The main entry, which just calls 'main'' with the command line arguments.
@@ -36,6 +36,7 @@ main = main' (unsafePerformIO getArgs)
 -}
 main'           :: [String] -> IO()
 main' args = do
+    cmdLineArgs args
     putStrLn "\nThe initial board:"
     print initBoard
 
@@ -66,4 +67,3 @@ replace xs n elem = let (ys,zs) = splitAt n xs
 -- | Replaces the (x,y)th element in a list of lists with a new element.
 replace2        :: [[a]] -> (Int,Int) -> a -> [[a]]
 replace2 xs (x,y) elem = replace xs y (replace (xs !! y) x elem)
-
