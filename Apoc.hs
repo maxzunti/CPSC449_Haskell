@@ -67,3 +67,34 @@ replace xs n elem = let (ys,zs) = splitAt n xs
 -- | Replaces the (x,y)th element in a list of lists with a new element.
 replace2        :: [[a]] -> (Int,Int) -> a -> [[a]]
 replace2 xs (x,y) elem = replace xs y (replace (xs !! y) x elem)
+
+-- takes Gamestate -> PawnPlacement and returns winner 
+mainloop :: GameState -> Int -> Int
+mainloop g p = if (gameOver g)
+             then winner g
+             else mainloop (nextTurn g p) p  
+
+
+-- Determines what stratagy white and black have and then sends it to moveWB
+-- It returns the altered GameState and the pawn placement status
+nextTurn :: GameState -> Int -> GameState
+nextTurn g p = g
+--nextTurn g p = if (white is human)
+--               then if (black is human) 
+--                    then moveWB white_human black_human 
+--			          else moveWB white_statagy, black_stratagy
+--			     else moveWB white_statagy black_stratagy
+
+-- moves the pieces by updating the gamestate
+-- needs to check is it was a legal move
+moveWB :: Chooser -> Chooser -> GameState -> Int -> GameState 
+moveWB w b g p = g
+
+--checks GameState to see if game is over			 
+gameOver :: GameState -> Bool
+gameOver _ = False
+
+--checks GameState to find winner
+--0 = tie, 1 = white, 2 = black
+winner :: GameState -> Int
+winner _ = 0
