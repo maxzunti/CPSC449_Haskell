@@ -29,8 +29,7 @@ import StartupMod
 import System.Exit (exitSuccess)
 
 --Custom Types------------------------------------------------------
-
-data WinState = BLACK | WHITE | DRAW | NONE deriving (Eq)
+--None, apparently
 
 
 ---Main-------------------------------------------------------------
@@ -83,7 +82,7 @@ mainLoop :: [Strat] -> GameState -> IO GameState
 -- At this point, assume the GameState and [Strat] is valid
 -- Perform error checking for new GameStates during update calls
 mainLoop (b:w:[]) g = 
-                        if ((gameOver g) == NONE)
+                        if ((checkForWinner g) == NONE)
                         then do -- GAME NOT OVER
                         -- Curently, only support Normal moves
                         bMove <- getStratMove b g Normal Black
@@ -170,19 +169,6 @@ nextTurn g p = g
 --			          else moveWB white_statagy, black_stratagy
 --			     else moveWB white_statagy black_stratagy
 
-
---checks GameState to see if game is over			 
---TODO
-gameOver :: GameState -> WinState
-gameOver _ = NONE
-
---checks GameState to find winner
---0 = tie, 1 = white, 2 = black
---MAX: If gameOver needs to verify the game is complete, why not
---     make it return the winner, too?
---TODO
-winner :: GameState -> Int
-winner _ = 0
 
 
 ---2D list utility functions-------------------------------------------------------
