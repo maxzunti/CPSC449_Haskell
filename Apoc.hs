@@ -63,6 +63,9 @@ main' args = do
                                                    (getFromBoard (theBoard initBoard) ((fromJust move) !! 0)))
                                          ((fromJust move) !! 0)
                                          E))
+    putStrLn "Begin actual loop: "
+    thing <- mainLoop stratList initBoard
+    putStrLn "Ha-HAH!"
 
 
 -- takes Gamestate -> PawnPlacement and returns winner 
@@ -85,9 +88,12 @@ mainLoop (b:w:[]) g =
                         wMove <- getStratMove w g Normal White
 
                         --TODO: Check move legality, update board / penalty accordingly
+                       
+                        --Print the board 
+                        putStrLn (show $ GameState (blackPlay g) (blackPen g) (whitePlay g) (whitePen g) (theBoard g))
 
                         -- The below works:
-                        newGs <- mainLoop (b:w:[]) initBoard    -- TODO: Need to pass a NEW GameState as arg
+                        newGs <- mainLoop (b:w:[]) g    -- TODO: Need to pass a NEW GameState as arg
                         return $ newGs
                         -- but for some reason, 
                         --return $ mainLoop (b:w:[]) initBoard
@@ -136,11 +142,6 @@ nextTurn g p = g
 --			          else moveWB white_statagy, black_stratagy
 --			     else moveWB white_statagy black_stratagy
 
--- moves the pieces by updating the gamestate
--- needs to check is it was a legal move
--- TODO
-moveWB :: Chooser -> Chooser -> GameState -> Int -> GameState 
-moveWB w b g p = g
 
 --checks GameState to see if game is over			 
 --TODO
