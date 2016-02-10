@@ -126,13 +126,14 @@ printGameState a = do
                    putStrLn $ show $ blackPlay a
 
 
--- Must be a legal move
+-- Must be a valid move
 -- Move must be in the form of played
 updateMoves :: Played -> Played -> GameState -> GameState
-updateMoves b w (GameState x bP y wP bd) = updateGamestate GameState b bP w wP bd
+updateMoves b w (GameState x bP y wP bd) = updateGamestate (GameState b bP w wP bd)
         
 -- Must be a legal move
-updateGamestate :: Gamestate -> Gamestate
+updateGamestate :: GameState -> GameState
+--updateGamestate :: Played -> Int -> Played -> Int -> Board -> GameState
 updateGamestate (GameState bPlay bPen wPlay wPen b) = GameState bPlay bPen wPlay wPen (updateBoard wPlay (updateBoard bPlay b))
 
 updateBoard :: Played -> Board -> Board
