@@ -24,6 +24,13 @@ import ApocTools
 import ApocStrategyHuman
 
 import StartupMod
+import System.Exit (exitSuccess)
+
+--Custom Types------------------------------------------------------
+
+data WinState = BLACK | WHITE | DRAW | NONE deriving (Eq)
+
+
 ---Main-------------------------------------------------------------
 
 -- | The main entry, which just calls 'main'' with the command line arguments.
@@ -38,6 +45,7 @@ main'           :: [String] -> IO()
 main' args = do
     stratList <- getStrategies args -- stratList has type [Strat], stores "BlkStrat:WhtStrat:[]"
     checkInvalid stratList -- exits if invalid
+    printGameState initBoard -- dummy call
     putStrLn "\nThe initial board:"
     print initBoard
 
@@ -63,16 +71,54 @@ mainloop g p = if (gameOver g)
              then winner g
              else mainloop (nextTurn g p) p  
 -}
+
 -- mainLoop calls itself, passing Strats and the current state
 -- before returning the new GameState
 mainLoop :: [Strat] -> GameState -> IO GameState
 -- At this point, assume the GameState and [Strat] is valid
 -- Perform error checking for new GameStates during update calls
-mainLoop (b:w:[]) a = do
-                        putStrLn "This is a test"
+mainLoop (b:w:[]) g = 
+                        if ((gameOver g) == NONE)
+                        then do -- GAME NOT OVER
+                        -- Curently, only support Normal moves
+                        bMove <- getStratMove b g Normal Black
+                        wMove <- getStratMove w g Normal White
+
+                        --TODO: Check move legality, update board / penalty accordingly
+
+                        -- The below works:
+                        newGs <- mainLoop (b:w:[]) initBoard    -- TODO: Need to pass a NEW GameState as arg
+                        return $ newGs
+                        -- but for some reason, 
+                        --return $ mainLoop (b:w:[]) initBoard
+                        -- doesn't
+
+                        else do
+                        putStrLn $ "have winrar" -- GAMEOVER, PRINT WINNER
                         return $ initBoard
+                        -- TODO: if (winner) then end, else
+                        --
+mainLoop _ _ = do putStrLn "Something broke"
+                  exitSuccess
+                  return $ initBoard
+
+-- Invoke "human" or "greedy" Chooser based on passed Strat
+getStratMove :: Strat -> GameState -> PlayType -> Player -> IO (Maybe [(Int,Int)])
+getStratMove s g t p = if (s == HUMAN)
+                       then human g t p
+                       --TODO: else if (s == GREEDY)
+                       else return $ Nothing
+
+
+-- EXAMPLE
+-- Dummy function showing how to access type members
+-- (I definitely didn't know how to do this - Max)
+printGameState :: GameState -> IO()
+printGameState a = do
+                   putStrLn "GameState blackPlay: "
+                   putStrLn $ show $ blackPlay a
         
---mainLoop _ _ = do putStrLn "Something broke"
+
 
 
 
@@ -98,8 +144,8 @@ moveWB w b g p = g
 
 --checks GameState to see if game is over			 
 --TODO
-gameOver :: GameState -> Bool
-gameOver _ = False
+gameOver :: GameState -> WinState
+gameOver _ = NONE
 
 --checks GameState to find winner
 --0 = tie, 1 = white, 2 = black

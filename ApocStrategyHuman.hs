@@ -23,6 +23,10 @@ import ApocTools
 {- | This is just a placeholder for the human strategy: it always chooses to play
      (0,0) to (2,1).
 -}
+-- Need to check move legality here
+
 human    :: Chooser
 human b Normal        c = return (Just [(0,0),(2,1)])
+--human b PawnPlacement c = return (Just getInput)
 human b PawnPlacement c = return (Just [(2,2)])
+
