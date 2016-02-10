@@ -125,9 +125,35 @@ printGameState :: GameState -> IO()
 printGameState a = do
                    putStrLn "GameState blackPlay: "
                    putStrLn $ show $ blackPlay a
+
+
+-- Must be a legal move
+-- Move must be in the form of played
+updateMoves :: Played -> Played -> GameState -> GameState
+updateMoves b w (GameState x bP y wP bd) = updateGamestate GameState b bP w wP bd
         
+-- Must be a legal move
+updateGamestate :: Gamestate -> Gamestate
+updateGamestate (GameState bPlay bPen wPlay wPen b) = GameState bPlay bPen wPlay wPen (updateBoard wPlay (updateBoard bPlay b))
+
+updateBoard :: Played -> Board -> Board
+updateBoard (Played (x,y)) b = replace2 (replace2 b y (getFromBoard b x)) x E --Does not work for pawn missed capture
+updateBoard (Passed) b = b
+updateBoard (Goofed (x,y)) b = replace2 (replace2 b y (getFromBoard b x)) x E --Does not work for pawn missed capture
+updateBoard (Init) b = b
+updateBoard (UpgradedPawn2Knight x) b = if ((playerOf (pieceOf (getFromBoard b x))) == Black )
+                                        then replace2 b x BK
+                                        else replace2 b x WK  
+updateBoard (PlacedPawn (x,y)) b = replace2 (replace2 b y (getFromBoard b x)) x E
+updateBoard (BadPlacedPawn (x,y)) b = b
+updateBoard (NullPlacedPawn) b = b
+updateBoard (None) b = b
 
 
+
+--updatePenalty :: Played -> Bool
+--updatePenalty (Goofed (x,y)) = True
+--updatePenalty a = False
 
 
 --tfunc :: Maybe a -> Int
