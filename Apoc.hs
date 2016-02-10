@@ -36,7 +36,7 @@ main = main' (unsafePerformIO getArgs)
 -}
 main'           :: [String] -> IO()
 main' args = do
-    stratList <- getStrategies args -- stratList has type [Strat]
+    stratList <- getStrategies args -- stratList has type [Strat], stores "BlkStrat:WhtStrat:[]"
     checkInvalid stratList -- exits if invalid
     putStrLn "\nThe initial board:"
     print initBoard
@@ -58,11 +58,26 @@ main' args = do
 
 
 -- takes Gamestate -> PawnPlacement and returns winner 
-mainloop :: GameState -> Int -> Int
+{-mainloop :: GameState -> Int -> Int
 mainloop g p = if (gameOver g)
              then winner g
              else mainloop (nextTurn g p) p  
+-}
+-- mainLoop calls itself, passing Strats and the current state
+-- before returning the new GameState
+mainLoop :: [Strat] -> GameState -> IO GameState
+-- At this point, assume the GameState and [Strat] is valid
+-- Perform error checking for new GameStates during update calls
+mainLoop (b:w:[]) a = do
+                        putStrLn "This is a test"
+                        return $ initBoard
+        
+--mainLoop _ _ = do putStrLn "Something broke"
 
+
+
+--tfunc :: Maybe a -> Int
+--tfunc a = 0
 
 -- Determines what stratagy white and black have and then sends it to moveWB
 -- It returns the altered GameState and the pawn placement status
