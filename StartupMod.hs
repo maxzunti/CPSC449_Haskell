@@ -4,27 +4,37 @@ import System.Exit (exitSuccess)
 
 listOfStrategy :: [String]
 listOfStrategy = ["human", "greedy"]
+data Strat = HUMAN | GREEDY | INVALID deriving (Eq)
 
---check cmd line arg and go to correct state
-cmdLineArgs :: [String] -> IO()
-cmdLineArgs [] = interactiveMode --If no cmd go to interactive mode
-cmdLineArgs (x:y:[]) = if ((elem x listOfStrategy) && (elem y listOfStrategy)) --if two elements check if they are valid stratigies
-                  then putStrLn "Valid strategy names" -- if Valid set strategy NOT DONE
-                  else invalidStrategyNames -- not valid go to invalidStrategyNames
-cmdLineArgs xs = invalidStrategyNames -- not 0 or tow arg go to invalidStrategyNames
+
+-- Return a list of 2 strategies
+getStrategies :: [String] -> IO [Strat]
+getStrategies [] = interactiveMode
+-- "do return" needed for IO [Strat] signature
+getStrategies (x:y:[]) = do return $ (stringToStrat x):(stringToStrat y):[]
+getStrategies s = do return $ INVALID:INVALID:[]
+
+
+-- Translate a string to an elem of type Strat
+stringToStrat :: String -> Strat
+stringToStrat s = if (s == "human")
+                  then HUMAN
+                  else if (s == "greedy")
+                  then GREEDY
+                  else INVALID -- Shouldn't be able to hit this
+
 
 --interactive mode
-interactiveMode :: IO()
+interactiveMode :: IO [Strat]
 interactiveMode = do
                     putStrLn "Welcome to Apocalypse!"
                     printStrategyNames listOfStrategy
                     putStrLn "Black Strategy: "
                     blkStrat <- getLine
                     putStrLn "White Strategy: "
-                    whtStrat <-getLine
-                    if ((elem blkStrat listOfStrategy) && (elem whtStrat listOfStrategy)) --if two elements check if they are valid stratigies
-                    then putStrLn "Valid strategy names" -- if Valid set strategy NOT DONE
-                    else invalidStrategyNames -- not valid go to invalidStrategyNames
+                    whtStrat <- getLine
+                    return $ (stringToStrat blkStrat):(stringToStrat whtStrat):[]
+
 
 invalidStrategyNames :: IO()
 invalidStrategyNames = do
@@ -32,8 +42,18 @@ invalidStrategyNames = do
       printStrategyNames listOfStrategy
       exitSuccess
 
---TODO
---setStrategies :: String -> String -> IO()
+
+checkInvalid :: [Strat] -> IO()
+checkInvalid [] = do
+                putStrLn "I borked" -- shouldn't happen
+                exitSuccess
+checkInvalid (x:y:[]) = if (x == INVALID) then invalidStrategyNames
+                      else if (y == INVALID) then invalidStrategyNames
+                      else putStr "" --do nothing
+checkInvalid s = do
+                putStrLn "I borked different" -- shouldn't happen
+                exitSuccess
+
 
 --print a list of string and add two space at the begining
 printStrategyNames :: [String] -> IO()

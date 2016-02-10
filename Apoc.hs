@@ -36,7 +36,8 @@ main = main' (unsafePerformIO getArgs)
 -}
 main'           :: [String] -> IO()
 main' args = do
-    cmdLineArgs args
+    stratList <- getStrategies args -- stratList has type [Strat]
+    checkInvalid stratList -- exits if invalid
     putStrLn "\nThe initial board:"
     print initBoard
 
