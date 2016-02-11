@@ -10,28 +10,74 @@ data WinState = BLACK | WHITE | DRAW | NONE deriving (Eq)
 
 -- MOVE LEGALITY CHECKERS
 -- Filter move to Normal or PawnPlacement checkers
-isValidMove :: [(Int,Int)] -> [(Int,Int)] -> GameState -> PlayType -> Player -> Result
-isValidMove i o g t p =
-                     if (checkBounds o)
-                        then if (pieceOwned i g p)
+isValidMove :: [(Int,Int)] -> GameState -> PlayType -> Player -> Result
+isValidMove i g t p = --Proceed iff none of the entries are out of bounds
+                     if (null (filter outOfBounds i))
+                        then if (pieceOwned (head i) g p)
                             then if (t == Normal)
-                            then isValidNormalMove i o g p
-                            else isValidPawnPlacement i g
+                            then isValidNormalMove i g p
+                            else isValidPawnPlacement i g   --Otherwise, is PawnPlacement
                         else INVALID
-                     else INVALID
+                    else INVALID
 
--- First, check output boundaries
-checkBounds :: [(Int,Int)] -> Bool
-checkBounds _ = True
-
+-- Return "true" iff the specified tuple is out of bounds
+outOfBounds :: (Int,Int) -> Bool
+--checkBounds [] = False  -- Shouldn't hit this
+outOfBounds l = if (((fst l <= 4) && (fst l >= 0))
+                 && ((snd l <= 4) && (snd l >= 0)))
+                -- now that's what I call lazy evauluation amirite
+               then False
+               else True
+                
 -- Check if input position corresponds to a player's piece
-pieceOwned :: [(Int,Int)] -> GameState -> Player -> Bool
-pieceOwned _ _ _ = True
+-- Already know piece is in bounds
+pieceOwned :: (Int,Int) -> GameState -> Player -> Bool
+pieceOwned l g p = if (getFromBoard (theBoard g) l == E)
+                   then False
+                   else playerOf (pieceOf (getFromBoard (theBoard g) l)) == p
+pieceOwned _ _ _ = False -- Shouldn't hit this
 
 
--- TODO
-isValidNormalMove :: [(Int,Int)] -> [(Int,Int)] -> GameState -> Player -> Result
-isValidNormalMove _ _ _ _ = VALID
+-- At this point, the first list is certain to have TWO 2-tuples which
+-- are both in bounds (and owned by the appropriate player)
+isValidNormalMove :: [(Int,Int)] ->  GameState -> Player -> Result
+isValidNormalMove (b:a:[]) g p = if  ((pieceOf (getFromBoard (theBoard g) b) == WhitePawn) ||
+                                      (pieceOf (getFromBoard (theBoard g) b) == BlackPawn))
+                                 then isValidPawnMove (b:a:[]) g p
+                                 else isValidKnightMove (b:a:[]) g p
+isValidNormalMove _ _ _ = INVALID -- Should not hit
+
+-- Check specific knight/pawn movements
+isValidKnightMove :: [(Int,Int)] -> GameState -> Player -> Result
+isValidKnightMove (b:a:[]) g p = if (((fst a == fst b + 2) && (snd a = snd b + 1))  ||
+                                     ((fst a == fst b + 2) && (snd a = snd b - 1 )) ||
+                                     ((fst a == fst b - 2) && (snd a = snd b + 1 )) ||
+                                     ((fst a == fst b - 2) && (snd a = snd b - 1 )) ||
+                                     ((fst a == fst b + 1) && (snd a = snd b + 2 )) ||
+                                     ((fst a == fst b + 1) && (snd a = snd b - 2 )) ||
+                                     ((fst a == fst b - 1) && (snd a = snd b + 2 )) ||
+                                     ((fst a == fst b - 1) && (snd a = snd b - 2 )))
+                                 then checkDest a g p
+                                 else INVALID
+
+isValidPawnMove :: [(Int,Int)] -> GameState -> Player -> Result
+-- Assuming White moves down (and therefore INCREASES)
+isValidPawnMove (b:a:[]) g p = if (p == White)
+                                   then if (snd a == snd b + 1) -- Must move 'down'
+                                       then if (fst a == fst b) 
+                                       then checkDest a g p
+                            -- FINISH ME
+
+-- See who owns the targeted cell
+checkDest :: (Int,Int) -> GameState -> Player -> Result
+checkDest l g p = if (getFromBoard (theBoard g) l == E)
+                  then VALID    -- Empty square
+                  else if (playerOf (pieceOf (getFromBoard a)) == p)
+                  then INVALID  -- Friendly square
+                  else CAPTURE  -- Enemy square
+
+
+
 
 -- TODO
 isValidPawnPlacement :: [(Int,Int)] -> GameState -> Result
