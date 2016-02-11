@@ -125,14 +125,15 @@ printGameState a = do
                    putStrLn "GameState blackPlay: "
                    putStrLn $ show $ blackPlay a
 
-{-
--- Must be a legal move
+
+-- Must be a valid move
 -- Move must be in the form of played
 updateMoves :: Played -> Played -> GameState -> GameState
-updateMoves b w (GameState x bP y wP bd) = updateGamestate GameState b bP w wP bd
-       
+updateMoves b w (GameState x bP y wP bd) = updateGamestate (GameState b bP w wP bd)
+        
 -- Must be a legal move
 updateGamestate :: GameState -> GameState
+--updateGamestate :: Played -> Int -> Played -> Int -> Board -> GameState
 updateGamestate (GameState bPlay bPen wPlay wPen b) = GameState bPlay bPen wPlay wPen (updateBoard wPlay (updateBoard bPlay b))
 
 updateBoard :: Played -> Board -> Board
@@ -147,7 +148,7 @@ updateBoard (PlacedPawn (x,y)) b = replace2 (replace2 b y (getFromBoard b x)) x 
 updateBoard (BadPlacedPawn (x,y)) b = b
 updateBoard (NullPlacedPawn) b = b
 updateBoard (None) b = b
--}
+
 
 
 --updatePenalty :: Played -> Bool
