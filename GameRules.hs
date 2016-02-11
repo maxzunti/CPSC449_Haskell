@@ -16,7 +16,7 @@ isValidMove i g t p = --Proceed iff none of the entries are out of bounds
                         then if (pieceOwned (head i) g p)
                             then if (t == Normal)
                             then isValidNormalMove i g p
-                            else isValidPawnPlacement i g   --Otherwise, is PawnPlacement
+                            else isValidPawnPlacement (head i) g   --Otherwise, is PawnPlacement
                         else INVALID
                     else INVALID
 
@@ -25,7 +25,6 @@ outOfBounds :: (Int,Int) -> Bool
 --checkBounds [] = False  -- Shouldn't hit this
 outOfBounds l = if (((fst l <= 4) && (fst l >= 0))
                  && ((snd l <= 4) && (snd l >= 0)))
-                -- now that's what I call lazy evauluation amirite
                then False
                else True
                 
@@ -35,7 +34,6 @@ pieceOwned :: (Int,Int) -> GameState -> Player -> Bool
 pieceOwned l g p = if (getFromBoard (theBoard g) l == E)
                    then False
                    else playerOf (pieceOf (getFromBoard (theBoard g) l)) == p
-pieceOwned _ _ _ = False -- Shouldn't hit this
 
 
 -- At this point, the first list is certain to have TWO 2-tuples which
@@ -49,14 +47,14 @@ isValidNormalMove _ _ _ = INVALID -- Should not hit
 
 -- Check specific knight/pawn movements
 isValidKnightMove :: [(Int,Int)] -> GameState -> Player -> Result
-isValidKnightMove (b:a:[]) g p = if (((fst a == fst b + 2) && (snd a = snd b + 1))  ||
-                                     ((fst a == fst b + 2) && (snd a = snd b - 1 )) ||
-                                     ((fst a == fst b - 2) && (snd a = snd b + 1 )) ||
-                                     ((fst a == fst b - 2) && (snd a = snd b - 1 )) ||
-                                     ((fst a == fst b + 1) && (snd a = snd b + 2 )) ||
-                                     ((fst a == fst b + 1) && (snd a = snd b - 2 )) ||
-                                     ((fst a == fst b - 1) && (snd a = snd b + 2 )) ||
-                                     ((fst a == fst b - 1) && (snd a = snd b - 2 )))
+isValidKnightMove (b:a:[]) g p = if (((fst a == fst b + 2) && (snd a == snd b + 1))  ||
+                                     ((fst a == fst b + 2) && (snd a == snd b - 1 )) ||
+                                     ((fst a == fst b - 2) && (snd a == snd b + 1 )) ||
+                                     ((fst a == fst b - 2) && (snd a == snd b - 1 )) ||
+                                     ((fst a == fst b + 1) && (snd a == snd b + 2 )) ||
+                                     ((fst a == fst b + 1) && (snd a == snd b - 2 )) ||
+                                     ((fst a == fst b - 1) && (snd a == snd b + 2 )) ||
+                                     ((fst a == fst b - 1) && (snd a == snd b - 2 )))
                                  then checkDest a g p
                                  else INVALID
 
@@ -66,23 +64,42 @@ isValidPawnMove (b:a:[]) g p = if (p == White)
                                    then if (snd a == snd b + 1) -- Must move 'down'
                                        then if (fst a == fst b) 
                                        then checkDest a g p
-                            -- FINISH ME
+                                       else if ((checkDest a g p == CAPTURE) &&
+                                               ((fst a == fst b + 1) || (fst a == fst b - 1)))
+                                       then CAPTURE
+                                       else INVALID
+                                   else INVALID
+                               else if (p == Black)
+                                   then if (snd a == snd b - 1) -- Must move 'up'
+                                       then if (fst a == fst b) 
+                                       then checkDest a g p
+                                       else if ((checkDest a g p == CAPTURE) &&
+                                               ((fst a == fst b + 1) || (fst a == fst b - 1)))
+                                       then CAPTURE
+                                       else INVALID
+                                   else INVALID
+                               else INVALID --Really, REALLY shouldn't be reachable
+                                   
 
 -- See who owns the targeted cell
 checkDest :: (Int,Int) -> GameState -> Player -> Result
 checkDest l g p = if (getFromBoard (theBoard g) l == E)
                   then VALID    -- Empty square
-                  else if (playerOf (pieceOf (getFromBoard a)) == p)
+                  else if (playerOf (pieceOf (getFromBoard (theBoard g) l)) == p) --Nonempty
                   then INVALID  -- Friendly square
                   else CAPTURE  -- Enemy square
 
 
+--XXX: What happens if we pick and invalid square?
+-- Apparently have BadPlacedPawn; will need to check against in calling function (i.e. mainLoop)
+isValidPawnPlacement :: (Int,Int) -> GameState -> Result
+isValidPawnPlacement l g = if (getFromBoard (theBoard g) l == E)
+                           then VALID
+                           else INVALID
 
-
--- TODO
-isValidPawnPlacement :: [(Int,Int)] -> GameState -> Result
-isValidPawnPlacement _ _ = INVALID
 
 -- Check GameState to see if we have a winner
 checkForWinner :: GameState -> WinState
 checkForWinner  _ = NONE
+
+
