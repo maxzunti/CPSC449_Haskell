@@ -26,7 +26,26 @@ import ApocTools
 -- Need to check move legality here
 
 human    :: Chooser
-human b Normal        c = return (Just [(0,0),(2,1)])
+human b Normal        c = do
+      x <- getInput
+      return (Just x)
 --human b PawnPlacement c = return (Just getInput)
 human b PawnPlacement c = return (Just [(2,2)])
 
+getInput :: IO[(Int, Int)]
+getInput = do
+  putStrLn "Enter the move coordinates for player ___ in the form"
+  input <- getLine
+  pos <- stringToList input
+  return pos
+
+
+stringToList :: String -> IO[(Int, Int)]
+stringToList x = do
+        return [(head (readNumbers x), toInt "1")]
+
+readNumbers :: String -> [Int]
+readNumbers s = map toInt (words s)
+
+toInt :: String -> Int
+toInt x = read x :: Int
