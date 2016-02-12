@@ -46,6 +46,11 @@ main'           :: [String] -> IO()
 main' args = do
     stratList <- getStrategies args -- stratList has type [Strat], stores "BlkStrat:WhtStrat:[]"
     checkInvalid stratList -- exits if invalid
+    --putStrLn "Begin actual loop: "
+    finalGameState <- mainLoop stratList initBoard
+    putStrLn("It's overrrr!");
+
+    {-
     printGameState initBoard -- dummy call
     putStrLn "\nThe initial board:"
     print initBoard
@@ -64,9 +69,7 @@ main' args = do
                                                    (getFromBoard (theBoard initBoard) ((fromJust move) !! 0)))
                                          ((fromJust move) !! 0)
                                          E))
-    putStrLn "Begin actual loop: "
-    thing <- mainLoop stratList initBoard
-    putStrLn "Ha-HAH!"
+    -}
 
 
 -- takes Gamestate -> PawnPlacement and returns winner 
@@ -84,15 +87,20 @@ mainLoop :: [Strat] -> GameState -> IO GameState
 mainLoop (b:w:[]) g = 
                         if ((checkForWinner g) == NONE)
                         then do -- GAME NOT OVER
-                        -- Curently, only support Normal moves
-                        bMove <- getStratMove b g Normal Black
-                        wMove <- getStratMove w g Normal White
+
+                        --These calls automatically return the correct type of [(Int,Int)] list
+                        -- depending on whether or not we should upgrade
+                        -- **** If the returned list has TWO entries, then this is a NORMAL turn
+                        -- If the returned list has ONE entry, this is a PAWNPLACEMENT
+                        bMove <- getStratMove b g Black
+                        wMove <- getStratMove w g White
 
                         --TODO: Check move legality, update board / penalty accordingly
+                        --
+                        --TODO: newGS <- mainLoop (b:w:[]) updateGameState g
                        
                         --Print the board 
                         putStrLn (show $ GameState (blackPlay g) (blackPen g) (whitePlay g) (whitePen g) (theBoard g))
-
                         -- The below works:
                         newGs <- mainLoop (b:w:[]) g    -- TODO: Need to pass a NEW GameState as arg
                         return $ newGs
@@ -101,7 +109,10 @@ mainLoop (b:w:[]) g =
                         -- doesn't
 
                         else do
-                        putStrLn $ "have winrar" -- GAMEOVER, PRINT WINNER
+                         -- GAMEOVER, PRINT WINNER
+                        if (checkForWinner g == WHITE)
+                        then putStrLn $ "have winrar White"
+                        else putStrLn $ "have winrar Black"
                         return $ initBoard
                         -- TODO: if (winner) then end, else
                         --
@@ -110,11 +121,14 @@ mainLoop _ _ = do putStrLn "Something broke"
                   return $ initBoard
 
 -- Invoke "human" or "greedy" Chooser based on passed Strat
-getStratMove :: Strat -> GameState -> PlayType -> Player -> IO (Maybe [(Int,Int)])
-getStratMove s g t p = if (s == HUMAN)
-                       then human g t p
+-- Also determines if it should be a normal move or a pawn placement
+-- FIXME: CURRENTLY DOESN'T WORK FOR GREEDY OR RANDOM
+getStratMove :: Strat -> GameState ->  Player -> IO (Maybe [(Int,Int)])
+getStratMove s g p = if (checkPawnUpgrade g p == Nothing)
+                       -- then if (s == HUMAN) 
+                       then human g Normal p   --TODO: IF (s == HUMAN) then
                        --TODO: else if (s == GREEDY)
-                       else return $ Nothing
+                       else human g PawnPlacement p
 
 
 -- EXAMPLE
@@ -141,7 +155,7 @@ updateBoard (Played (x,y)) b = replace2 (replace2 b y (getFromBoard b x)) x E --
 updateBoard (Passed) b = b
 updateBoard (Goofed (x,y)) b = replace2 (replace2 b y (getFromBoard b x)) x E --Does not work for pawn missed capture
 updateBoard (Init) b = b
-updateBoard (UpgradedPawn2Knight x) b = if ((playerOf (pieceOf (getFromBoard b x))) == Black )
+updateBoard (UpgradedPawn2Knight x) b = if ((playerOf (ourPieceOf (getFromBoard b x))) == Black )
                                         then replace2 b x BK
                                         else replace2 b x WK  
 updateBoard (PlacedPawn (x,y)) b = replace2 (replace2 b y (getFromBoard b x)) x E

@@ -9,7 +9,7 @@ import ApocTools
  - The only functions that (I think) need to be called from OUTSIDE this
  - module are:
  -
- - isValidMove :: [(Int,Int)] -> GameState -> PlayType -> Player
+ - isValidMove :: [(Int,Int)] -> GameState -> PlayType -> Player -> Result
  -      --> Takes a list of coordinates, a GameState, and a PlayType.
  -          Returns either VALID, INVALID, or CAPTURE if the PlayType is Normal,
  -          and returns either VALID or INVALID if the PlayType is PawnPlacement.
@@ -72,14 +72,14 @@ outOfBounds l = if (((fst l <= 4) && (fst l >= 0))
 pieceOwned :: (Int,Int) -> GameState -> Player -> Bool
 pieceOwned l g p = if (getFromBoard (theBoard g) l == E)
                    then False
-                   else playerOf (pieceOf (getFromBoard (theBoard g) l)) == p
+                   else playerOf (ourPieceOf (getFromBoard (theBoard g) l)) == p
 
 
 -- At this point, the first list is certain to have TWO 2-tuples which
 -- are both in bounds (and owned by the appropriate player)
 isValidNormalMove :: [(Int,Int)] ->  GameState -> Player -> Result
-isValidNormalMove (b:a:[]) g p = if  ((pieceOf (getFromBoard (theBoard g) b) == WhitePawn) ||
-                                      (pieceOf (getFromBoard (theBoard g) b) == BlackPawn))
+isValidNormalMove (b:a:[]) g p = if  ((ourPieceOf (getFromBoard (theBoard g) b) == WhitePawn) ||
+                                      (ourPieceOf (getFromBoard (theBoard g) b) == BlackPawn))
                                  then isValidPawnMove (b:a:[]) g p
                                  else isValidKnightMove (b:a:[]) g p
 isValidNormalMove _ _ _ = INVALID -- Should not hit
@@ -124,7 +124,7 @@ isValidPawnMove (b:a:[]) g p = if (p == White)
 checkDest :: (Int,Int) -> GameState -> Player -> Result
 checkDest l g p = if (getFromBoard (theBoard g) l == E)
                   then VALID    -- Empty square
-                  else if (playerOf (pieceOf (getFromBoard (theBoard g) l)) == p) --Nonempty
+                  else if (playerOf (ourPieceOf (getFromBoard (theBoard g) l)) == p) --Nonempty
                   then INVALID  -- Friendly square
                   else CAPTURE  -- Enemy square
 
@@ -143,10 +143,10 @@ checkPawnUpgrade g p = if (p == White) --White Far rank == 4
                        else checkPawnInRank g BlackPawn 4 0 -- Black far rank = 0
 
 checkPawnInRank :: GameState -> Piece -> Int -> Int -> Maybe((Int,Int))
-checkPawnInRank g p 0 y = if (pieceOf (getFromBoard (theBoard g) (0,y)) == p)
+checkPawnInRank g p 0 y = if (ourPieceOf (getFromBoard (theBoard g) (0,y)) == p)
                           then Just (0,y)
                           else Nothing
-checkPawnInRank g p x y = if (pieceOf (getFromBoard (theBoard g) (x,y)) == p)
+checkPawnInRank g p x y = if (ourPieceOf (getFromBoard (theBoard g) (x,y)) == p)
                           then Just (x,y)
                           else checkPawnInRank g p (x-1) y
 
@@ -171,7 +171,6 @@ checkForWinner g = if ((countPieces g WhitePawn == 0) || (whitePen g >= 2))
                    else NONE
 
 
-
 -- Counts the number of specific pieces on the board
 -- (Note that Piece = BlackKnight | WhiteKnight | BlackPawn | WhitePawn)
 countPieces :: GameState ->  Piece -> Int
@@ -189,6 +188,15 @@ countPieceHelper g p x y = if (x > 0)
                            else matchingPiece g p (x,y) -- x == y == 0
 
 matchingPiece :: GameState -> Piece -> (Int,Int) -> Int
-matchingPiece g p l = if (pieceOf (getFromBoard (theBoard g) l) == p)
+matchingPiece g p l = if (ourPieceOf (getFromBoard (theBoard g) l) == p)
                       then 1
                       else 0
+
+-- Overridden functions from ApocTools.hs
+-- These functions are only used as clones of functions in ApocTools which hopefully circumvent a few errors
+ourPieceOf :: Cell -> Piece
+ourPieceOf BK = BlackKnight 
+ourPieceOf WK = WhiteKnight 
+ourPieceOf BP = BlackPawn 
+ourPieceOf WP = WhitePawn
+ourPieceOf _ = BlackKnight -- Bad result, but we shouldn't hit it
