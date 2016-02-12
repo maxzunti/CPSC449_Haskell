@@ -95,6 +95,11 @@ mainLoop (b:w:[]) g =
                         bMove <- getStratMove b g Black
                         wMove <- getStratMove w g White
 
+                        -- End game if both players pass
+                        if ((bMove == Nothing) && (wMove == Nothing))
+                        then exitSuccess
+                        else putStrLn "Both players passed, game over" --TODO: print actual ending message here
+
                         --TODO: Check move legality, update board / penalty accordingly
                         --
                         --TODO: newGS <- mainLoop (b:w:[]) updateGameState g
