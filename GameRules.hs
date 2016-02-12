@@ -20,10 +20,16 @@ import ApocTools
  -          either contains Nothing (if no pawns are eligible) or contains the
  -          coordinates of the pawn to be upgraded.
  -
- -   XXXXXXXX#$%#$khdfg       M: Maybe split this into "findPawnToUpgrade" and "checkPawnUpgrade"?
+ - upgradeOrReplace :: GameState -> Player -> UpgradeResult
+ -      --> If checkPawnUpgrade returns a location (i.e. is not Nothing), then
+ -          call upgradeOrReplace to count Knights and determine if we should either
+ -          replace the pawn or upgrade it
  -
  - checkForWinner -> GameState -> WinState
- -      --> Checks if either player has won the game; returns BLACK, WHITE, NONE, or DRAW.
+ -      --> Checks if either player has won the game; returns BLACK, WHITE, or NONE. DRAW
+ -          is currently unused.
+ -          NOTE THAT THIS DOESNT CHECK IF BOTH PLAYERS PASS, that needs to be done after
+ -          both players take their turns.
  -
  - (MAYBE? I'm not sure if you guys will need this one)
  - countPieces -> GameState -> Piece -> Int
@@ -35,6 +41,10 @@ import ApocTools
 
 --Custom Types------------------------------------------------------
 data Result = VALID | INVALID | CAPTURE deriving (Eq)
+-- This is a different type than Result because we need to get the result for a pawn move,
+-- perform a capture if appropriate, and THEN check if we reach the last rank
+-- (Example case: pawn CAPTURES a unit in the last rank, then needs to capture AND upgrade)
+data UpgradeResult = UPGRADE | REPLACE  deriving (Eq)
 data WinState = BLACK | WHITE | DRAW | NONE deriving (Eq) 
 
 -- MOVE LEGALITY CHECKERS
@@ -126,16 +136,40 @@ isValidPawnPlacement l g = if (getFromBoard (theBoard g) l == E)
                            then VALID
                            else INVALID
 
--- See if any pawns should be upgraded
---checkPawnUpgrade :: GameState -> Player -> Maybe((Int,Int))
---checkPawnUpgrade g p = 
+-- See if any pawns should be upgraded; if so, return the location of the pawn to upgrade
+checkPawnUpgrade :: GameState -> Player -> Maybe((Int,Int))
+checkPawnUpgrade g p = if (p == White) --White Far rank == 4
+                       then checkPawnInRank g WhitePawn 4 4
+                       else checkPawnInRank g BlackPawn 4 0 -- Black far rank = 0
 
---checkPawnUpgrade' :: GameState -> Int -> Int -> Maybe((Int,Int))
+checkPawnInRank :: GameState -> Piece -> Int -> Int -> Maybe((Int,Int))
+checkPawnInRank g p 0 y = if (pieceOf (getFromBoard (theBoard g) (0,y)) == p)
+                          then Just (0,y)
+                          else Nothing
+checkPawnInRank g p x y = if (pieceOf (getFromBoard (theBoard g) (x,y)) == p)
+                          then Just (x,y)
+                          else checkPawnInRank g p (x-1) y
+
+upgradeOrReplace :: GameState -> Player -> UpgradeResult
+upgradeOrReplace g p = if (p == White)
+                       then if (countPieces g WhiteKnight < 2)
+                           then UPGRADE
+                           else REPLACE
+                       else if (countPieces g BlackKnight < 2)
+                           then UPGRADE
+                           else REPLACE
+
 
 
 -- Check GameState to see if we have a winner
+-- NOTE: Doesn't check if both players pass
 checkForWinner :: GameState -> WinState
-checkForWinner  _ = NONE
+checkForWinner g = if ((countPieces g WhitePawn == 0) || (whitePen g >= 2))
+                   then BLACK
+                   else if ((countPieces g BlackPawn == 0) || (blackPen g >= 2))
+                   then WHITE
+                   else NONE
+
 
 
 -- Counts the number of specific pieces on the board
