@@ -29,8 +29,7 @@ import StartupMod
 import System.Exit (exitSuccess)
 
 --Custom Types------------------------------------------------------
-
-data WinState = BLACK | WHITE | DRAW | NONE deriving (Eq)
+--None, apparently
 
 
 ---Main-------------------------------------------------------------
@@ -83,7 +82,7 @@ mainLoop :: [Strat] -> GameState -> IO GameState
 -- At this point, assume the GameState and [Strat] is valid
 -- Perform error checking for new GameStates during update calls
 mainLoop (b:w:[]) g = 
-                        if ((gameOver g) == NONE)
+                        if ((checkForWinner g) == NONE)
                         then do -- GAME NOT OVER
                         -- Curently, only support Normal moves
                         bMove <- getStratMove b g Normal Black
@@ -125,9 +124,36 @@ printGameState :: GameState -> IO()
 printGameState a = do
                    putStrLn "GameState blackPlay: "
                    putStrLn $ show $ blackPlay a
+
+
+-- Must be a valid move
+-- Move must be in the form of played
+updateMoves :: Played -> Played -> GameState -> GameState
+updateMoves b w (GameState x bP y wP bd) = updateGamestate (GameState b bP w wP bd)
         
+-- Must be a legal move
+updateGamestate :: GameState -> GameState
+--updateGamestate :: Played -> Int -> Played -> Int -> Board -> GameState
+updateGamestate (GameState bPlay bPen wPlay wPen b) = GameState bPlay bPen wPlay wPen (updateBoard wPlay (updateBoard bPlay b))
+
+updateBoard :: Played -> Board -> Board
+updateBoard (Played (x,y)) b = replace2 (replace2 b y (getFromBoard b x)) x E --Does not work for pawn missed capture
+updateBoard (Passed) b = b
+updateBoard (Goofed (x,y)) b = replace2 (replace2 b y (getFromBoard b x)) x E --Does not work for pawn missed capture
+updateBoard (Init) b = b
+updateBoard (UpgradedPawn2Knight x) b = if ((playerOf (pieceOf (getFromBoard b x))) == Black )
+                                        then replace2 b x BK
+                                        else replace2 b x WK  
+updateBoard (PlacedPawn (x,y)) b = replace2 (replace2 b y (getFromBoard b x)) x E
+updateBoard (BadPlacedPawn (x,y)) b = b
+updateBoard (NullPlacedPawn) b = b
+updateBoard (None) b = b
 
 
+
+--updatePenalty :: Played -> Bool
+--updatePenalty (Goofed (x,y)) = True
+--updatePenalty a = False
 
 
 --tfunc :: Maybe a -> Int
@@ -144,19 +170,6 @@ nextTurn g p = g
 --			          else moveWB white_statagy, black_stratagy
 --			     else moveWB white_statagy black_stratagy
 
-
---checks GameState to see if game is over			 
---TODO
-gameOver :: GameState -> WinState
-gameOver _ = NONE
-
---checks GameState to find winner
---0 = tie, 1 = white, 2 = black
---MAX: If gameOver needs to verify the game is complete, why not
---     make it return the winner, too?
---TODO
-winner :: GameState -> Int
-winner _ = 0
 
 
 ---2D list utility functions-------------------------------------------------------

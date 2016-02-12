@@ -1,4 +1,20 @@
-{- | This module is used for CPSC 449 for the Apocalypse assignment.
+{- |
+Module      : ApocTools
+Description : Required definitions for the CPSC 449 W2016 Haskell Apocalypse assignment.
+Copyright   : Copyright 2016, Rob Kremer (rkremer@ucalgary.ca), University of Calgary.
+License     : Permission to use, copy, modify, distribute and sell this software
+              and its documentation for any purpose is hereby granted without fee, provided
+              that the above copyright notice appear in all copies and that both that
+              copyright notice and this permission notice appear in supporting
+              documentation. The University of Calgary makes no representations about the
+              suitability of this software for any purpose. It is provided "as is" without
+              express or implied warranty.
+Maintainer  : rkremer@ucalgary.ca
+Stability   : experimental
+Portability : ghc 7.10.2 - 7.10.3
+
+
+This module is used for CPSC 449 for the Apocalypse assignment.
 
 You MUST use this file as part of your assignment to deal with boards,
 cells, etc.  This may be tested by linking your assignment against a modified
@@ -6,22 +22,38 @@ version of this file.
 
 Do not modify this file.
 
-Copyright: Copyright 2016, Rob Kremer (rkremer@ucalgary.ca), University of Calgary.
-Permission to use, copy, modify, distribute and sell this software
-and its documentation for any purpose is hereby granted without fee, provided
-that the above copyright notice appear in all copies and that both that
-copyright notice and this permission notice appear in supporting
-documentation. The University of Calgary makes no representations about the
-suitability of this software for any purpose. It is provided "as is" without
-express or implied warranty.
-
 -}
 
 -- The following pragmas are only necessary for the Read class instance of 'GameBoard'
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module ApocTools where
+module ApocTools (
+    -- * Cell (A "square" on the board)
+    Cell(WK,WP,BK,BP,E),
+    cell2Char,
+    char2Cell,
+    putCell,
+    -- * The board itself
+    Board,
+    initBoard,
+    putBoard,
+    board2Str,
+    getFromBoard,
+    -- * Players and pieces
+    Player(Black,White),
+    Piece(BlackKnight,BlackPawn,WhiteKnight,WhitePawn),
+    pieceOf,
+    playerOf,
+    -- * Move descriptions
+    Played(Played,Passed,Goofed,Init,UpgradedPawn2Knight,PlacedPawn,BadPlacedPawn,NullPlacedPawn,None),
+    PlayType(Normal,PawnPlacement),
+    -- * The game state
+    GameState(GameState,blackPlay,blackPen,whitePlay,whitePen,theBoard),
+    -- * The interface for a strategy
+    Chooser
+
+    ) where
 
 import Data.Char (isSpace)
 
@@ -196,15 +228,22 @@ instance Show (GameState) where
 
 -- | Customize the read function for 'Board' to coorespond with the show function.
 instance Read GameState where
-         readsPrec _ r = let r1 = dropWhile (/='>') r
-                             r2 = dropWhile (=='>') r1
-                             (((bPlay,bPen),rest1):_) = readsPrec 0 (dropWhile (isSpace) r2) :: [((Played,Int),String)]
-                             rest2 = tail rest1 -- read past the newline after the black play
-                             (((wPlay,wPen),rest3):_) = readsPrec 0 (dropWhile (isSpace) rest2) :: [((Played,Int),String)]
-                             rest4 = tail rest3 -- read past the newline after the white play
-                             ((board,rest5):_) = readsPrec 0 rest4 :: [(Board,String)]
-                             result = GameState bPlay bPen wPlay wPen board
-                         in  [(result, rest5)]
+    readsPrec _ r =
+      case readsPrec 0 (dropWhile (isSpace) (scanPastFlag r)) :: [((Played,Int),String)] of
+        (((bPlay,bPen),rest1):_) ->
+          case readsPrec 0 (dropWhile (isSpace) (tail rest1)) :: [((Played,Int),String)] of
+            (((wPlay,wPen),rest3):_) ->
+              case readsPrec 0 (tail rest3) :: [(Board,String)] of
+                ((board,rest5):_) ->
+                  [(GameState bPlay bPen wPlay wPen board, rest5)]
+                e3 -> []
+            e2 -> []
+        e1 -> []
+
+scanPastFlag :: String -> String
+scanPastFlag []                    = ""
+scanPastFlag ('>':'>':'>':'\n':cs) = cs
+scanPastFlag (c:cs)                = scanPastFlag cs
 
 -- | The text version of a state for testing purposes.
 testState = "some garbage\n\
