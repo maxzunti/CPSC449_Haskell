@@ -4,6 +4,35 @@ module GameRules where
 
 import ApocTools
 
+{-
+ - IMPORTANT NOTES:
+ - The only functions that (I think) need to be called from OUTSIDE this
+ - module are:
+ -
+ - isValidMove :: [(Int,Int)] -> GameState -> PlayType -> Player
+ -      --> Takes a list of coordinates, a GameState, and a PlayType.
+ -          Returns either VALID, INVALID, or CAPTURE if the PlayType is Normal,
+ -          and returns either VALID or INVALID if the PlayType is PawnPlacement.
+ -
+ - checkPawnUpgrade :: GameState -> Player -> Maybe((Int,Int))
+ -      --> Checks if any pawns owned by the specified Player have reached the
+ -          furthest Rank and should upgraded. Returns a Maybe((Int,Int)) which
+ -          either contains Nothing (if no pawns are eligible) or contains the
+ -          coordinates of the pawn to be upgraded.
+ -
+ -   XXXXXXXX#$%#$khdfg       M: Maybe split this into "findPawnToUpgrade" and "checkPawnUpgrade"?
+ -
+ - checkForWinner -> GameState -> WinState
+ -      --> Checks if either player has won the game; returns BLACK, WHITE, NONE, or DRAW.
+ -
+ - (MAYBE? I'm not sure if you guys will need this one)
+ - countPieces -> GameState -> Piece -> Int
+ -      --> Returns the number of pieces of a given type.
+ -
+ - If it turns out you guys do need some of the other functions in here, that should be fine,
+ - just be careful with the recursive ones (i.e. match the numbers initally passed by the "wrappers")
+ - -}
+
 --Custom Types------------------------------------------------------
 data Result = VALID | INVALID | CAPTURE deriving (Eq)
 data WinState = BLACK | WHITE | DRAW | NONE deriving (Eq) 
@@ -97,9 +126,35 @@ isValidPawnPlacement l g = if (getFromBoard (theBoard g) l == E)
                            then VALID
                            else INVALID
 
+-- See if any pawns should be upgraded
+--checkPawnUpgrade :: GameState -> Player -> Maybe((Int,Int))
+--checkPawnUpgrade g p = 
+
+--checkPawnUpgrade' :: GameState -> Int -> Int -> Maybe((Int,Int))
+
 
 -- Check GameState to see if we have a winner
 checkForWinner :: GameState -> WinState
 checkForWinner  _ = NONE
 
 
+-- Counts the number of specific pieces on the board
+-- (Note that Piece = BlackKnight | WhiteKnight | BlackPawn | WhitePawn)
+countPieces :: GameState ->  Piece -> Int
+countPieces g p = countPieceHelper g p 4 4 -- 4 4 corresponds to max (x,y) pos
+
+-- Recursive function to go through the entire board
+countPieceHelper :: GameState -> Piece -> Int -> Int -> Int
+countPieceHelper g p x y = if (x > 0)
+                               then if (y > 0)
+                               then (matchingPiece g p (x,y)) + (countPieceHelper g p x (y-1))
+                               else (matchingPiece g p (x,y)) + (countPieceHelper g p (x-1) 4)
+                           -- x == 0
+                           else if (y > 0)
+                           then (matchingPiece g p (x,y)) + (countPieceHelper g p x (y-1))
+                           else matchingPiece g p (x,y) -- x == y == 0
+
+matchingPiece :: GameState -> Piece -> (Int,Int) -> Int
+matchingPiece g p l = if (pieceOf (getFromBoard (theBoard g) l) == p)
+                      then 1
+                      else 0
