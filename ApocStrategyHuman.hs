@@ -19,12 +19,10 @@ This is merely a skeleton to get you started on creating a strategy for playing 
 Apocalypse game.  It has VERY little functionality.
 -}
 
-module ApocStrategyHuman (
-   human
-   ) where
+module ApocStrategyHuman where
 
 
-
+import Data.Char
 import Control.Monad.Trans.State.Lazy
 import Data.Maybe (fromJust, isNothing)
 import System.IO.Unsafe
@@ -37,25 +35,54 @@ import ApocTools
 
 human    :: Chooser
 human b Normal        c = do
-      x <- getInput
+      x <- getInput Normal
       return (Just x)
---human b PawnPlacement c = return (Just getInput)
-human b PawnPlacement c = return (Just [(2,2)])
 
-getInput :: IO[(Int, Int)]
-getInput = do
+human b PawnPlacement c = do
+  x <- getInput PawnPlacement
+  return (Just x)
+
+
+getInput :: PlayType -> IO[(Int, Int)]
+getInput p = do
   putStrLn "Enter the move coordinates for player ___ in the form"
   input <- getLine
-  pos <- stringToList input
+  pos <- stringToList input p
   return pos
 
 
-stringToList :: String -> IO[(Int, Int)]
-stringToList x = do
-        return [(head (readNumbers x), toInt "1")]
+stringToList :: String -> PlayType -> IO[(Int, Int)]
+stringToList x p = if (p == Normal)
+                  then if (length (words x) /= 4)
+                        then do return [(20,20),(20,20)]
+                        else do return [(readNumbers x !! 0,readNumbers x !! 1),(readNumbers x !! 2,readNumbers x !! 3)]
+                  else if (length (words x) /= 2)
+                        then do return [(20,20)]
+                        else do return [(readNumbers x !! 0, readNumbers x !! 1)]
 
+--takes a string
 readNumbers :: String -> [Int]
-readNumbers s = map toInt (words s)
+readNumbers s = if (checkInHum (words s))
+                then map toInt (words s)
+                else [20, 20, 20, 20]
+
+checkInHum :: [String] -> Bool
+checkInHum [] = False
+checkInHum (x:xs) | length (x:xs) == 4 && checkStrsIsInt (x:xs) = True
+                  | length (x:xs) == 2 && checkStrsIsInt (x:xs) = True
+                  | otherwise = False
+
+checkStrIsInt :: String -> Bool
+checkStrIsInt []     = True
+checkStrIsInt (x:xs) = if (isNumber x)
+                      then checkStrIsInt xs
+                      else False
+
+checkStrsIsInt :: [String] -> Bool
+checkStrsIsInt []     = True
+checkStrsIsInt (x:xs) = if (checkStrIsInt x)
+                      then checkStrsIsInt xs
+                      else False
 
 toInt :: String -> Int
 toInt x = read x :: Int
