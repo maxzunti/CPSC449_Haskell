@@ -23,6 +23,7 @@ import System.IO.Unsafe
 import ApocTools
 import ApocStrategyHuman
 import ApocStrategyGreedy
+import ApocStrategyRandom
 import GameRules
 
 import StartupMod
@@ -72,11 +73,11 @@ main' args = do
     -}
 
 
--- takes Gamestate -> PawnPlacement and returns winner 
+-- takes Gamestate -> PawnPlacement and returns winner
 {-mainloop :: GameState -> Int -> Int
 mainloop g p = if (gameOver g)
              then winner g
-             else mainloop (nextTurn g p) p  
+             else mainloop (nextTurn g p) p
 -}
 
 -- mainLoop calls itself, passing Strats and the current state
@@ -84,7 +85,7 @@ mainloop g p = if (gameOver g)
 mainLoop :: [Strat] -> GameState -> IO GameState
 -- At this point, assume the GameState and [Strat] is valid
 -- Perform error checking for new GameStates during update calls
-mainLoop (b:w:[]) g = 
+mainLoop (b:w:[]) g =
                         if ((checkForWinner g) == NONE)
                         then do -- GAME NOT OVER
 
@@ -103,13 +104,13 @@ mainLoop (b:w:[]) g =
                         --TODO: Check move legality, update board / penalty accordingly
                         --
                         --TODO: newGS <- mainLoop (b:w:[]) updateGameState g
-                       
-                        --Print the board 
+
+                        --Print the board
                         putStrLn (show $ GameState (blackPlay g) (blackPen g) (whitePlay g) (whitePen g) (theBoard g))
                         -- The below works:
                         newGs <- mainLoop (b:w:[]) g    -- TODO: Need to pass a NEW GameState as arg
                         return $ newGs
-                        -- but for some reason, 
+                        -- but for some reason,
                         --return $ mainLoop (b:w:[]) initBoard
                         -- doesn't
 
@@ -130,7 +131,7 @@ mainLoop _ _ = do putStrLn "Something broke"
 -- FIXME: CURRENTLY DOESN'T WORK FOR GREEDY OR RANDOM
 getStratMove :: Strat -> GameState ->  Player -> IO (Maybe [(Int,Int)])
 getStratMove s g p = if (checkPawnUpgrade g p == Nothing)
-                       -- then if (s == HUMAN) 
+                       -- then if (s == HUMAN)
                        then human g Normal p   --TODO: IF (s == HUMAN) then
                        --TODO: else if (s == GREEDY)
                        else human g PawnPlacement p
@@ -149,7 +150,7 @@ printGameState a = do
 -- Move must be in the form of played
 updateMoves :: Played -> Played -> GameState -> GameState
 updateMoves b w (GameState x bP y wP bd) = updateGamestate (GameState b bP w wP bd)
-        
+
 -- Must be a legal move
 updateGamestate :: GameState -> GameState
 --updateGamestate :: Played -> Int -> Played -> Int -> Board -> GameState
@@ -162,7 +163,7 @@ updateBoard (Goofed (x,y)) b = replace2 (replace2 b y (getFromBoard b x)) x E --
 updateBoard (Init) b = b
 updateBoard (UpgradedPawn2Knight x) b = if ((playerOf (ourPieceOf (getFromBoard b x))) == Black )
                                         then replace2 b x BK
-                                        else replace2 b x WK  
+                                        else replace2 b x WK
 updateBoard (PlacedPawn (x,y)) b = replace2 (replace2 b y (getFromBoard b x)) x E
 updateBoard (BadPlacedPawn (x,y)) b = b
 updateBoard (NullPlacedPawn) b = b
@@ -184,8 +185,8 @@ updateBoard (None) b = b
 nextTurn :: GameState -> Int -> GameState
 nextTurn g p = g
 --nextTurn g p = if (white is human)
---               then if (black is human) 
---                    then moveWB white_human black_human 
+--               then if (black is human)
+--                    then moveWB white_human black_human
 --			          else moveWB white_statagy, black_stratagy
 --			     else moveWB white_statagy black_stratagy
 
@@ -203,4 +204,3 @@ replace xs n elem = let (ys,zs) = splitAt n xs
 -- | Replaces the (x,y)th element in a list of lists with a new element.
 replace2        :: [[a]] -> (Int,Int) -> a -> [[a]]
 replace2 xs (x,y) elem = replace xs y (replace (xs !! y) x elem)
-
