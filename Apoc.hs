@@ -43,11 +43,17 @@ main = main' (unsafePerformIO getArgs)
      1. call our program from GHCi in the usual way
      2. run from the command line by calling this function with the value from (getArgs)
 -}
+
+--testFun :: GameState -> GameState
+--testFun g = updateMoves (Played ((0, 3), ( 0, 2))) (Played ((4, 1), ( 4, 2))) g
+
 main'           :: [String] -> IO()
 main' args = do
     stratList <- getStrategies args -- stratList has type [Strat], stores "BlkStrat:WhtStrat:[]"
     checkInvalid stratList -- exits if invalid
     --putStrLn "Begin actual loop: "
+    --Print the board
+    putStrLn (show $ GameState (blackPlay initBoard) (blackPen initBoard) (whitePlay initBoard) (whitePen initBoard) (theBoard initBoard))
     finalGameState <- mainLoop stratList initBoard
     putStrLn("It's overrrr!");
 
@@ -105,10 +111,12 @@ mainLoop (b:w:[]) g =
                         --
                         --TODO: newGS <- mainLoop (b:w:[]) updateGameState g
 
+                        newg <- updateMoves (Played (fromJust bMove !! 0,fromJust bMove !! 1)) (Played (fromJust wMove !! 0,fromJust wMove !! 1)) g
+
                         --Print the board
-                        putStrLn (show $ GameState (blackPlay g) (blackPen g) (whitePlay g) (whitePen g) (theBoard g))
+                        putStrLn (show $ GameState (blackPlay newg) (blackPen newg) (whitePlay newg) (whitePen newg) (theBoard newg))
                         -- The below works:
-                        newGs <- mainLoop (b:w:[]) g    -- TODO: Need to pass a NEW GameState as arg
+                        newGs <- mainLoop (b:w:[]) newg    -- TODO: Need to pass a NEW GameState as arg
                         return $ newGs
                         -- but for some reason,
                         --return $ mainLoop (b:w:[]) initBoard
@@ -148,8 +156,8 @@ printGameState a = do
 
 -- Must be a valid move
 -- Move must be in the form of played
-updateMoves :: Played -> Played -> GameState -> GameState
-updateMoves b w (GameState x bP y wP bd) = updateGamestate (GameState b bP w wP bd)
+updateMoves :: Played -> Played -> GameState -> IO(GameState)
+updateMoves b w (GameState x bP y wP bd) = do return (updateGamestate (GameState b bP w wP bd))
 
 -- Must be a legal move
 updateGamestate :: GameState -> GameState
