@@ -227,13 +227,15 @@ updateMoves b w (GameState x bP y wP bd) = do return (updateGamestate (GameState
 
 -- Must be a legal move
 updateGamestate :: GameState -> GameState
---updateGamestate :: Played -> Int -> Played -> Int -> Board -> GameState
-updateGamestate (GameState bPlay bPen wPlay wPen b) = GameState bPlay bPen wPlay wPen (updateBoard wPlay (updateBoard bPlay b))
+updateGamestate (GameState bPlay bPen wPlay wPen b) | (moveType bPlay wPlay == MISSCAPTURE) = GameState bPlay bPen wPlay wPen (misscapture bPlay wPlay b)
+                                                    | (moveType bPlay wPlay == DOUBLECAPTURE) = GameState bPlay bPen wPlay wPen (doublecapture bPlay wPlay b)
+                                                    | (moveType bPlay wPlay == SWAP) = GameState bPlay bPen wPlay wPen (swap bPlay wPlay (getFromBoard b (playedToCood bPlay)) b)
+                                                    | otherwise = GameState bPlay bPen wPlay wPen (updateBoard wPlay (updateBoard bPlay b))
 
 updateBoard :: Played -> Board -> Board
 updateBoard (Played (x,y)) b = replace2 (replace2 b y (getFromBoard b x)) x E --Does not work for pawn missed capture
 updateBoard (Passed) b = b
-updateBoard (Goofed (x,y)) b = b --replace2 (replace2 b y (getFromBoard b x)) x E --Does not work for pawn missed capture
+updateBoard (Goofed (x,y)) b = b
 updateBoard (Init) b = b
 updateBoard (UpgradedPawn2Knight x) b = if ((playerOf (ourPieceOf (getFromBoard b x))) == Black )
                                         then replace2 b x BK
@@ -243,28 +245,29 @@ updateBoard (BadPlacedPawn (x,y)) b = b
 updateBoard (NullPlacedPawn) b = b
 updateBoard (None) b = b
 
+data MoveType = NORMALMOVE | MISSCAPTURE | DOUBLECAPTURE | SWAP deriving (Eq)
 
+moveType :: Played -> Played -> MoveType
+moveType (Played (x1,y1)) (Played (x2,y2)) | ((x1 == y2) || (x2 == y1)) = MISSCAPTURE
+                                           | (y1 == y2) = DOUBLECAPTURE
+                                           | (x1 == y2 && y1 == x2) = SWAP
+                                           | otherwise = NORMALMOVE
+moveType b w = NORMALMOVE
 
---updatePenalty :: Played -> Bool
---updatePenalty (Goofed (x,y)) = True
---updatePenalty a = False
+misscapture :: Played -> Played -> Board -> Board
+misscapture (Played (sb,db)) (Played (sw,dw)) b | (sb == dw) = replace2 (replace2 (replace2 b db (getFromBoard b sb)) dw (getFromBoard b sw)) sw E
+                                                | (sw == db) = replace2 (replace2 (replace2 b dw (getFromBoard b sw)) db (getFromBoard b sb)) sb E
 
+doublecapture :: Played -> Played -> Board -> Board
+doublecapture (Played (x1,y1)) (Played (x2,y2)) b  | ((getFromBoard b x1) == (getFromBoard b x2)) = replace2 (replace2 b x1 E) x2 E
+                                                   | ((getFromBoard b x1) == BK) = replace2 (replace2 (replace2 b y1 (getFromBoard b x1)) x1 E) x2 E
+                                                   | ((getFromBoard b x2) == WK) = replace2 (replace2 (replace2 b y2 (getFromBoard b x2)) x2 E) x1 E
 
---tfunc :: Maybe a -> Int
---tfunc a = 0
+swap :: Played -> Played -> Cell -> Board -> Board
+swap (Played (x1,y1)) (Played (x2,y2)) c b = replace2 (replace2 b x1 (getFromBoard b x2)) x2 c
 
--- Determines what stratagy white and black have and then sends it to moveWB
--- It returns the altered GameState and the pawn placement status
--- TODO
-nextTurn :: GameState -> Int -> GameState
-nextTurn g p = g
---nextTurn g p = if (white is human)
---               then if (black is human)
---                    then moveWB white_human black_human
---			          else moveWB white_statagy, black_stratagy
---			     else moveWB white_statagy black_stratagy
-
-
+playedToCood :: Played -> (Int,Int)
+playedToCood (Played (x,y)) = x
 
 ---2D list utility functions-------------------------------------------------------
 
