@@ -4,7 +4,7 @@ import System.Exit (exitSuccess)
 
 listOfStrategy :: [String]
 listOfStrategy = ["human", "greedy", "random"]
-data Strat = HUMAN | GREEDY | RANDOMSTRAT | INVALID deriving (Eq)
+data Strat = HUMAN | GREEDY | RANDOMSTRAT | INVALIDSTRAT deriving (Eq)
 
 
 
@@ -13,7 +13,7 @@ getStrategies :: [String] -> IO [Strat]
 getStrategies [] = interactiveMode
 -- "do return" needed for IO [Strat] signature
 getStrategies (x:y:[]) = do return $ (stringToStrat x):(stringToStrat y):[]
-getStrategies s = do return $ INVALID:INVALID:[]
+getStrategies s = do return $ INVALIDSTRAT:INVALIDSTRAT:[]
 
 
 -- Translate a string to an elem of type Strat
@@ -21,7 +21,7 @@ stringToStrat :: String -> Strat
 stringToStrat s | (s == "human") = HUMAN
                 | (s == "greedy") = GREEDY
                 | (s == "random") = RANDOMSTRAT
-                | otherwise = INVALID -- Shouldn't be able to hit this
+                | otherwise = INVALIDSTRAT -- Shouldn't be able to hit this
 
 
 --interactive mode
@@ -57,8 +57,8 @@ checkInvalid :: [Strat] -> IO()
 checkInvalid [] = do
                 putStrLn "I borked" -- shouldn't happen
                 exitSuccess
-checkInvalid (x:y:[]) = if (x == INVALID) then invalidStrategyNames
-                      else if (y == INVALID) then invalidStrategyNames
+checkInvalid (x:y:[]) = if (x == INVALIDSTRAT) then invalidStrategyNames
+                      else if (y == INVALIDSTRAT) then invalidStrategyNames
                       else putStr "" --do nothing
 checkInvalid s = do
                 putStrLn "I borked different" -- shouldn't happen

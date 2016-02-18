@@ -33,12 +33,15 @@ getInput pt pl = do
   then putStrLn ("Enter the move coordinates for player " ++ (playerToStr pl) ++ " in the form 'srcX srcY destX destY' [0 >= n >= 4, or just enter return for a 'pass'] " ++ (charToString ((playerToStr pl) !! 0)) ++ "2:")
   else putStrLn ("Enter the coordinates to place the pawn for player " ++ (playerToStr pl) ++ " in the form 'destX destY': [0 >= n >= 4] " ++ (charToString ((playerToStr pl) !! 0)) ++ "1:")
   input <- getLine
-  if (checkEnoughVar (words input) pt && checkVarIsNum (words input) pt)
-  then do pos <- convertMoveType (words input) pt
-          return pos
-  else do
-    putStrLn "You have entered an invalid input! Try again\n"
-    getInput pt pl
+  if (input == "")
+  then do return []
+  else
+    if (checkEnoughVar (words input) pt && checkVarIsNum (words input) pt)
+    then do pos <- convertMoveType (words input) pt
+            return pos
+    else do
+      putStrLn "You have entered an invalid input! Try again\n"
+      getInput pt pl
 
 --Check that their is Enough varibles for the move
 checkEnoughVar :: [String] -> PlayType -> Bool

@@ -45,7 +45,7 @@ data Result = VALID | INVALID | CAPTURE deriving (Eq)
 -- perform a capture if appropriate, and THEN check if we reach the last rank
 -- (Example case: pawn CAPTURES a unit in the last rank, then needs to capture AND upgrade)
 data UpgradeResult = UPGRADE | REPLACE  deriving (Eq)
-data WinState = BLACK | WHITE | DRAW | NONE deriving (Eq) 
+data WinState = BLACK | WHITE | DRAW | NONE deriving (Eq)
 
 -- MOVE LEGALITY CHECKERS
 -- Filter move to Normal or PawnPlacement checkers
@@ -66,7 +66,7 @@ outOfBounds l = if (((fst l <= 4) && (fst l >= 0))
                  && ((snd l <= 4) && (snd l >= 0)))
                then False
                else True
-                
+
 -- Check if input position corresponds to a player's piece
 -- Already know piece is in bounds
 pieceOwned :: (Int,Int) -> GameState -> Player -> Bool
@@ -101,7 +101,7 @@ isValidPawnMove :: [(Int,Int)] -> GameState -> Player -> Result
 -- Assuming White moves down (and therefore INCREASES)
 isValidPawnMove (b:a:[]) g p = if (p == White)
                                    then if (snd a == snd b + 1) -- Must move 'down'
-                                       then if (fst a == fst b) 
+                                       then if (fst a == fst b)
                                        then checkDest a g p
                                        else if ((checkDest a g p == CAPTURE) &&
                                                ((fst a == fst b + 1) || (fst a == fst b - 1)))
@@ -110,7 +110,7 @@ isValidPawnMove (b:a:[]) g p = if (p == White)
                                    else INVALID
                                else if (p == Black)
                                    then if (snd a == snd b - 1) -- Must move 'up'
-                                       then if (fst a == fst b) 
+                                       then if (fst a == fst b)
                                        then checkDest a g p
                                        else if ((checkDest a g p == CAPTURE) &&
                                                ((fst a == fst b + 1) || (fst a == fst b - 1)))
@@ -118,7 +118,7 @@ isValidPawnMove (b:a:[]) g p = if (p == White)
                                        else INVALID
                                    else INVALID
                                else INVALID --Really, REALLY shouldn't be reachable
-                                   
+
 
 -- See who owns the targeted cell
 checkDest :: (Int,Int) -> GameState -> Player -> Result
@@ -195,8 +195,8 @@ matchingPiece g p l = if (ourPieceOf (getFromBoard (theBoard g) l) == p)
 -- Overridden functions from ApocTools.hs
 -- These functions are only used as clones of functions in ApocTools which hopefully circumvent a few errors
 ourPieceOf :: Cell -> Piece
-ourPieceOf BK = BlackKnight 
-ourPieceOf WK = WhiteKnight 
-ourPieceOf BP = BlackPawn 
+ourPieceOf BK = BlackKnight
+ourPieceOf WK = WhiteKnight
+ourPieceOf BP = BlackPawn
 ourPieceOf WP = WhitePawn
 ourPieceOf _ = BlackKnight -- Bad result, but we shouldn't hit it

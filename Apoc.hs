@@ -104,14 +104,27 @@ mainLoop (b:w:[]) g =
 
                         -- End game if both players pass
                         if ((bMove == Nothing) && (wMove == Nothing))
-                        then exitSuccess
-                        else putStrLn "Both players passed, game over" --TODO: print actual ending message here
+                        then do
+                          putStrLn "Both Pass, ending game"
+                          exitSuccess
+                        else putStrLn " " --TODO: print actual ending message here
+
+                        newg <- findPlayed (fromJust bMove) (fromJust wMove) g
+
+
 
                         --TODO: Check move legality, update board / penalty accordingly
-                        --
+
+                        {-if (isValidMove (fromJust bMove) == VALID || CAPTURE)
+                          then newg <- updateMoves (Played (fromJust bMove !! 0,fromJust bMove !! 1)) (Played (fromJust wMove !! 0,fromJust wMove !! 1)) g
+                          else newg <- updateMoves (Goofed (fromJust bMove !! 0,fromJust bMove !! 1)) (Played (fromJust wMove !! 0,fromJust wMove !! 1)) (updatePenalty g Black)
+
+                          if (isValidMove (fromJust wMove) == VALID || CAPTURE)
+                            then newg <- updateMoves (Played (fromJust bMove !! 0,fromJust bMove !! 1)) (Played (fromJust wMove !! 0,fromJust wMove !! 1)) g
+                            else newg <- newg-}
                         --TODO: newGS <- mainLoop (b:w:[]) updateGameState g
 
-                        newg <- updateMoves (Played (fromJust bMove !! 0,fromJust bMove !! 1)) (Played (fromJust wMove !! 0,fromJust wMove !! 1)) g
+                        --newg <- updateMoves (Played (fromJust bMove !! 0,fromJust bMove !! 1)) (Played (fromJust wMove !! 0,fromJust wMove !! 1)) g
 
                         --Print the board
                         putStrLn (show $ GameState (blackPlay newg) (blackPen newg) (whitePlay newg) (whitePen newg) (theBoard newg))
@@ -153,6 +166,57 @@ printGameState a = do
                    putStrLn "GameState blackPlay: "
                    putStrLn $ show $ blackPlay a
 
+findPlayed :: [(Int,Int)] -> [(Int, Int)] -> GameState -> IO(GameState)
+findPlayed b w g = do
+        x <- findPlayed' b w g (mapMoveToPT b) (mapMoveToPT w)
+        return x
+
+findPlayed' :: [(Int,Int)] -> [(Int, Int)] -> GameState -> PlayType -> PlayType -> IO(GameState)
+findPlayed' b w g bPt wPt | ((isValidMove b g bPt Black)== VALID) && ((isValidMove w g wPt White) == VALID)= bwValid b w g bPt wPt
+                          | ((isValidMove b g bPt Black)== VALID) && ((isValidMove w g wPt White) == INVALID)= bValidOnly b w g bPt wPt
+                          | ((isValidMove b g bPt Black)== INVALID) && ((isValidMove w g wPt White) == VALID)= wValidOnly b w g bPt wPt
+                          | otherwise = bwInvalid b w g bPt wPt
+
+bwValid :: [(Int,Int)] -> [(Int, Int)] -> GameState -> PlayType -> PlayType -> IO(GameState)
+bwValid [] [] (GameState bPlay bPen wPlay wPen board) bPt wPt = do
+                                                                x <- updateMoves (Passed) (Passed) (GameState bPlay bPen wPlay wPen board)
+                                                                return x
+bwValid [] w (GameState bPlay bPen wPlay wPen board) bPt wPt = do
+  x <- updateMoves (Passed) (Played (w !! 0,w !! 1)) (GameState bPlay bPen wPlay wPen board)
+  return x
+bwValid b [] (GameState bPlay bPen wPlay wPen board) bPt wPt = do
+  x <- updateMoves (Played (b !! 0,b !! 1)) (Passed) (GameState bPlay bPen wPlay wPen board)
+  return x
+bwValid b w (GameState bPlay bPen wPlay wPen board) bPt wPt = do
+  x <- updateMoves (Played (b !! 0,b !! 1)) (Played (w !! 0,w !! 1)) (GameState bPlay bPen wPlay wPen board)
+  return x
+
+wValidOnly :: [(Int,Int)] -> [(Int, Int)] -> GameState -> PlayType -> PlayType -> IO(GameState)
+wValidOnly b [] (GameState bPlay bPen wPlay wPen board) bPt wPt = do
+  x <- updateMoves (Goofed (b !! 0,b !! 1)) (Passed) (GameState bPlay (bPen + 1) wPlay wPen board)
+  return x
+wValidOnly b w (GameState bPlay bPen wPlay wPen board) bPt wPt = do
+  x <- updateMoves (Goofed (b !! 0,b !! 1)) (Played (w !! 0,w !! 1)) (GameState bPlay (bPen + 1) wPlay wPen board)
+  return x
+
+bValidOnly :: [(Int,Int)] -> [(Int, Int)] -> GameState -> PlayType -> PlayType -> IO(GameState)
+bValidOnly [] w (GameState bPlay bPen wPlay wPen board) bPt wPt = do
+  x <- updateMoves (Passed) (Goofed (w !! 0,w !! 1)) (GameState bPlay bPen wPlay (wPen + 1) board)
+  return x
+bValidOnly b w (GameState bPlay bPen wPlay wPen board) bPt wPt = do
+  x <- updateMoves (Played (b !! 0,b !! 1)) (Goofed (w !! 0,w !! 1)) (GameState bPlay bPen wPlay (wPen + 1) board)
+  return x
+
+bwInvalid :: [(Int,Int)] -> [(Int, Int)] -> GameState -> PlayType -> PlayType -> IO(GameState)
+bwInvalid b w (GameState bPlay bPen wPlay wPen board) bPt wPt = do
+  x <- updateMoves (Goofed (b !! 0,b !! 1)) (Goofed (w !! 0,w !! 1)) (GameState bPlay (bPen + 1) wPlay (wPen + 1) board)
+  return x
+
+mapMoveToPT :: [a] -> PlayType
+mapMoveToPT [] = Normal
+mapMoveToPT x = if (length x == 2)
+                then Normal
+                else PawnPlacement
 
 -- Must be a valid move
 -- Move must be in the form of played
@@ -167,7 +231,7 @@ updateGamestate (GameState bPlay bPen wPlay wPen b) = GameState bPlay bPen wPlay
 updateBoard :: Played -> Board -> Board
 updateBoard (Played (x,y)) b = replace2 (replace2 b y (getFromBoard b x)) x E --Does not work for pawn missed capture
 updateBoard (Passed) b = b
-updateBoard (Goofed (x,y)) b = replace2 (replace2 b y (getFromBoard b x)) x E --Does not work for pawn missed capture
+updateBoard (Goofed (x,y)) b = b --replace2 (replace2 b y (getFromBoard b x)) x E --Does not work for pawn missed capture
 updateBoard (Init) b = b
 updateBoard (UpgradedPawn2Knight x) b = if ((playerOf (ourPieceOf (getFromBoard b x))) == Black )
                                         then replace2 b x BK
