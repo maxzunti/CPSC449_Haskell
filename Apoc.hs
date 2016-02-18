@@ -151,9 +151,14 @@ mainLoop _ _ = do putStrLn "Something broke"
 -- Also determines if it should be a normal move or a pawn placement
 -- FIXME: CURRENTLY DOESN'T WORK FOR GREEDY OR RANDOM
 getStratMove :: Strat -> GameState ->  Player -> IO (Maybe [(Int,Int)])
-getStratMove s g p | (checkPawnUpgrade g p == Nothing) = human g PawnPlacement p --TODO: pawn placement
-                     | (s == HUMAN) = human g Normal p
-                     | (s == RANDOMSTRAT) = randomStrat g Normal p
+getStratMove s g p   | (s == HUMAN) = do
+                                        x <- human g Normal p
+                                        return x
+                     | (s == RANDOMSTRAT) = do
+                                        x <- randomStrat g Normal p
+                                        return x
+
+-- | (checkPawnUpgrade g p == Nothing) = human g PawnPlacement p --TODO: pawn placement
 
 -- EXAMPLE
 -- Dummy function showing how to access type members
@@ -169,9 +174,9 @@ findPlayed b w g = do
         return x
 
 findPlayed' :: [(Int,Int)] -> [(Int, Int)] -> GameState -> PlayType -> PlayType -> IO(GameState)
-findPlayed' b w g bPt wPt | ((isValidMove b g bPt Black)== VALID) && ((isValidMove w g wPt White) == VALID)= bwValid b w g bPt wPt
-                          | ((isValidMove b g bPt Black)== VALID) && ((isValidMove w g wPt White) == INVALID)= bValidOnly b w g bPt wPt
-                          | ((isValidMove b g bPt Black)== INVALID) && ((isValidMove w g wPt White) == VALID)= wValidOnly b w g bPt wPt
+findPlayed' b w g bPt wPt | ((((isValidMove b g bPt Black)== VALID) || ((isValidMove b g bPt Black)== CAPTURE)) && (((isValidMove w g wPt White) == VALID) || ((isValidMove w g wPt White) == CAPTURE)))= bwValid b w g bPt wPt
+                          | ((((isValidMove b g bPt Black)== VALID) || ((isValidMove b g bPt Black)== CAPTURE)) && ((isValidMove w g wPt White) == INVALID))= bValidOnly b w g bPt wPt
+                          | (((isValidMove b g bPt Black)== INVALID) && (((isValidMove w g wPt White) == VALID) || ((isValidMove w g wPt White) == CAPTURE)))= wValidOnly b w g bPt wPt
                           | otherwise = bwInvalid b w g bPt wPt
 
 bwValid :: [(Int,Int)] -> [(Int, Int)] -> GameState -> PlayType -> PlayType -> IO(GameState)
