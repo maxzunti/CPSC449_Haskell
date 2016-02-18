@@ -1,8 +1,9 @@
 module ApocStrategyRandom where
 
---import Control.Monad.Random
+--import System.Random
 import Data.List
 import ApocTools
+import GameRules
 
 --get coodinates for all specified pieces INT HAS TO BE 0!!!
 getAllPieceCoor :: Int -> Cell -> Board -> [(Int, Int)]
@@ -18,4 +19,49 @@ mapCoorALLX :: Int -> [Int] -> [(Int, Int)]
 mapCoorALLX y [] = []
 mapCoorALLX y (x:xs) = (x,y):mapCoorALLX y xs
 
---calcPawnMove :: (Int, Int)
+
+wMoves :: (Int, Int) -> [(Int, Int)]
+wMoves (x, y) = [(x-1, y+1), (x+1, y+1), (x, y+1)] --diagonal left, diagonal right, forward
+
+
+bMoves :: (Int, Int) -> [(Int, Int)]
+bMoves (x, y) = [(x-1, y-1), (x+1, y-1), (x, y-1)] --diagonal left, diagonal right, forward
+
+
+getNext :: Int -> [(Int, Int)] -> (Int, Int)
+getNext _ [] = (-1, -1)
+getNext 0 list = head list
+getNext i (x:xs) = getNext (i-1) xs
+
+getWPMove :: Int -> Int -> GameState -> [(Int, Int)] --pawn index, possible moves Index, GameState
+getWPMove n m (GameState bplay bpenalty wplay wpenalty board) =  if ((isValidMove (pos:mov:[]) gs Normal White) == VALID || (isValidMove (pos:mov:[]) gs Normal White) == CAPTURE)
+                                                                 then [pos, mov] 
+                                                                 else if (m < length wmList)
+                                                                      then getWPMove n (m+1) gs
+                                                                      else if (n > length wpList) 
+                                                                           then [] 
+                                                                           else getWPMove (n+1) 0 gs
+    where wpList = getAllPieceCoor 0 WP board
+          wmList = wMoves pos
+          pos    = getNext n wpList
+          mov    = getNext m wmList
+          gs     = (GameState bplay bpenalty wplay wpenalty board)
+
+
+
+getBPMove :: Int -> Int -> GameState -> [(Int, Int)] --pawn index, possible moves Index, GameState
+getBPMove n m (GameState bplay bpenalty wplay wpenalty board) =  if ((isValidMove (pos:mov:[]) gs Normal Black) == VALID || (isValidMove (pos:mov:[]) gs Normal Black) == CAPTURE)
+                                                                 then [pos, mov] 
+                                                                 else if (m < length bmList)
+                                                                      then getBPMove n (m+1) gs
+                                                                      else if (n > length bpList) 
+                                                                           then [] 
+                                                                           else getBPMove (n+1) 0 gs
+    where bpList = getAllPieceCoor 0 BP board
+          bmList = bMoves pos
+          pos    = getNext n bpList
+          mov    = getNext m bmList
+          gs     = (GameState bplay bpenalty wplay wpenalty board)
+
+testFunc :: [(Int, Int)]
+testFunc = getWPMove 0 0 initBoard
