@@ -151,12 +151,9 @@ mainLoop _ _ = do putStrLn "Something broke"
 -- Also determines if it should be a normal move or a pawn placement
 -- FIXME: CURRENTLY DOESN'T WORK FOR GREEDY OR RANDOM
 getStratMove :: Strat -> GameState ->  Player -> IO (Maybe [(Int,Int)])
-getStratMove s g p = if (checkPawnUpgrade g p == Nothing)
-                       -- then if (s == HUMAN)
-                       then human g Normal p   --TODO: IF (s == HUMAN) then
-                       --TODO: else if (s == GREEDY)
-                       else human g PawnPlacement p
-
+getStratMove s g p | (checkPawnUpgrade g p == Nothing) = human g PawnPlacement p --TODO: pawn placement
+                     | (s == HUMAN) = human g Normal p
+                     | (s == RANDOMSTRAT) = randomStrat g Normal p
 
 -- EXAMPLE
 -- Dummy function showing how to access type members
