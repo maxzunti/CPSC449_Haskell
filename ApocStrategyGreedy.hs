@@ -8,13 +8,14 @@ import GameRules
 -- Need to check move legality here
 -- Gets input from user and return
 greedyStrat    :: Chooser
-greedyStrat (GameState bplay bpenalty wplay wpenalty board) Normal        p = if (p == White) 
-                                then do return (Just (if (length (getAllPieceCoor 0 WK board) == 0) 
-                                                      then getWPMove 0 0 Normal (GameState bplay bpenalty wplay wpenalty board) 
-                                                      else getWKMove 0 0 (GameState bplay bpenalty wplay wpenalty board) )) 
-                                else do return (Just (if (length (getAllPieceCoor 0 BK board) == 0) 
-                                                      then getBPMove 0 0 Normal (GameState bplay bpenalty wplay wpenalty board) 
-                                                      else getBKMove 0 0 (GameState bplay bpenalty wplay wpenalty board) ))
+greedyStrat (GameState bplay bpenalty wplay wpenalty board) Normal p = 
+            if (p == White) 
+            then do return (Just (if (length (getAllPieceCoor 0 WK board) == 0) 
+                                  then getWPMove 0 0 Normal (GameState bplay bpenalty wplay wpenalty board) 
+                                  else getWKMove 0 0 (GameState bplay bpenalty wplay wpenalty board) )) 
+            else do return (Just (if (length (getAllPieceCoor 0 BK board) == 0) 
+                                  then getBPMove 0 0 Normal (GameState bplay bpenalty wplay wpenalty board) 
+                                  else getBKMove 0 0 (GameState bplay bpenalty wplay wpenalty board) ))
 
 --get coodinates for all specified pieces INT HAS TO BE 0!!!
 getAllPieceCoor :: Int -> Cell -> Board -> [(Int, Int)]
@@ -50,13 +51,15 @@ getNext i (x:xs) = getNext (i-1) xs
 
 --Gives the first valid movement of a white pawn
 getWPMove :: Int -> Int -> PlayType -> GameState -> [(Int, Int)] --pawn index, possible moves Index, GameState
-getWPMove n m pt (GameState bplay bpenalty wplay wpenalty board) =  if ((isValidMove (pos:mov:[]) gs pt White) == VALID || (isValidMove (pos:mov:[]) gs pt White) == CAPTURE)
-                                                                 then if (pt == Normal)then [pos, mov] else [mov]
-                                                                 else if (m < length wmList)
-                                                                      then getWPMove n (m+1) pt gs
-                                                                      else if (n > length wpList)
-                                                                           then []
-                                                                           else getWPMove (n+1) 0 pt gs
+getWPMove n m pt (GameState bplay bpenalty wplay wpenalty board) =  
+          if ((isValidMove (pos:mov:[]) gs pt White) == VALID || (isValidMove (pos:mov:[]) gs pt White) == CAPTURE)
+          then if (pt == Normal)then [pos, mov] else [mov]
+          else if (m < length wmList)
+               then getWPMove n (m+1) pt gs
+               else if (n > length wpList)
+               then []
+               else getWPMove (n+1) 0 pt gs
+
     where wpList = getAllPieceCoor 0 WP board
           wmList = wpMoves pos
           pos    = getNext n wpList
@@ -67,13 +70,15 @@ getWPMove n m pt (GameState bplay bpenalty wplay wpenalty board) =  if ((isValid
 
 --Gives the first valid movement of a white knight
 getWKMove :: Int -> Int -> GameState -> [(Int, Int)] --knight index, possible moves Index, GameState
-getWKMove n m (GameState bplay bpenalty wplay wpenalty board) =  if ((isValidMove (pos:mov:[]) gs Normal White) == VALID || (isValidMove (pos:mov:[]) gs Normal White) == CAPTURE)
-                                                                 then [pos, mov]
-                                                                 else if (m < length wmList)
-                                                                      then getWKMove n (m+1) gs
-                                                                      else if (n > length wkList)
-                                                                           then []
-                                                                           else getWKMove (n+1) 0 gs
+getWKMove n m (GameState bplay bpenalty wplay wpenalty board) =  
+          if ((isValidMove (pos:mov:[]) gs Normal White) == VALID || (isValidMove (pos:mov:[]) gs Normal White) == CAPTURE)
+          then [pos, mov]
+          else if (m < length wmList)
+               then getWKMove n (m+1) gs
+               else if (n > length wkList)
+               then []
+               else getWKMove (n+1) 0 gs
+
     where wkList = getAllPieceCoor 0 WK board
           wmList = kMoves pos
           pos    = getNext n wkList
@@ -85,13 +90,15 @@ getWKMove n m (GameState bplay bpenalty wplay wpenalty board) =  if ((isValidMov
 
 --Gives the first valid movement of a black pawn
 getBPMove :: Int -> Int -> PlayType -> GameState -> [(Int, Int)] --pawn index, possible moves Index, GameState
-getBPMove n m pt (GameState bplay bpenalty wplay wpenalty board) =  if ((isValidMove (pos:mov:[]) gs pt Black) == VALID || (isValidMove (pos:mov:[]) gs pt Black) == CAPTURE)
-                                                                 then if (pt == Normal)then [pos, mov] else [mov]
-                                                                 else if (m < length bmList)
-                                                                      then getBPMove n (m+1) pt gs
-                                                                      else if (n > length bpList)
-                                                                           then []
-                                                                           else getBPMove (n+1) 0 pt gs
+getBPMove n m pt (GameState bplay bpenalty wplay wpenalty board) =  
+          if ((isValidMove (pos:mov:[]) gs pt Black) == VALID || (isValidMove (pos:mov:[]) gs pt Black) == CAPTURE)
+          then if (pt == Normal)then [pos, mov] else [mov]
+          else if (m < length bmList)
+               then getBPMove n (m+1) pt gs
+               else if (n > length bpList)
+               then []
+               else getBPMove (n+1) 0 pt gs
+
     where bpList = getAllPieceCoor 0 BP board
           bmList = bpMoves pos
           pos    = getNext n bpList
@@ -101,13 +108,15 @@ getBPMove n m pt (GameState bplay bpenalty wplay wpenalty board) =  if ((isValid
 
 --Gives the first valid movement of a black knight
 getBKMove :: Int -> Int -> GameState -> [(Int, Int)] --knight index, possible moves Index, GameState
-getBKMove n m (GameState bplay bpenalty wplay wpenalty board) =  if ((isValidMove (pos:mov:[]) gs Normal Black) == VALID || (isValidMove (pos:mov:[]) gs Normal Black) == CAPTURE)
-                                                                 then [pos, mov]
-                                                                 else if (m < length bmList)
-                                                                      then getBKMove n (m+1) gs
-                                                                      else if (n > length bkList)
-                                                                           then []
-                                                                           else getBKMove (n+1) 0 gs
+getBKMove n m (GameState bplay bpenalty wplay wpenalty board) = 
+          if ((isValidMove (pos:mov:[]) gs Normal Black) == VALID || (isValidMove (pos:mov:[]) gs Normal Black) == CAPTURE)
+          then [pos, mov]
+          else if (m < length bmList)
+               then getBKMove n (m+1) gs
+               else if (n > length bkList)
+               then []
+               else getBKMove (n+1) 0 gs
+
     where bkList = getAllPieceCoor 0 BK board
           bmList = kMoves pos
           pos    = getNext n bkList
