@@ -31,7 +31,6 @@ interactiveMode = do
                     putStrLn "Apocalypse is a variant on the classic chess game. The players each start with two horsemen and five footmen on a 5×5 board. The two sides make their moves simultaneously."
                     putStrLn "\nThe Rules:"
                     putStrLn "- If they moved to the same square, a horseman captures a footman. Same-type pieces are both removed from the board."
-                    putStrLn "- If they moved to the same square, a horseman captures a footman. Same-type pieces are both removed from the board."
                     putStrLn "- If a capture was declared using a footman, but the piece to be captured moved from its square, the footman move still stands. (The move converts to a diagonal step instead of a capture.)"
                     putStrLn "- If a declared move is illegal, the player incurs a penalty point."
                     putStrLn "- A footman promotes to horseman when reaching the last rank, but only when the player has less than two horsemen. Otherwise the player must redeploy the footman to any vacant square."
