@@ -327,10 +327,13 @@ updateGamestate :: GameState -> GameState
 updateGamestate (GameState bPlay bPen wPlay wPen b) | (moveType bPlay wPlay == MISSCAPTURE) = GameState bPlay bPen wPlay wPen (misscapture bPlay wPlay b)
                                                     | (moveType bPlay wPlay == DOUBLECAPTURE) = GameState bPlay bPen wPlay wPen (doublecapture bPlay wPlay b)
                                                     | (moveType bPlay wPlay == SWAP) = GameState bPlay bPen wPlay wPen (swap bPlay wPlay (getFromBoard b (playedToCood bPlay)) b)
+                                                    | ((pawnPenalty bPlay) && (pawnPenalty wPlay)) = GameState bPlay (bPen+1) wPlay (wPen+1) (updateBoard wPlay (updateBoard bPlay b))
+                                                    | (pawnPenalty bPlay) = GameState bPlay (bPen+1) wPlay wPen (updateBoard wPlay (updateBoard bPlay b))
+                                                    | (pawnPenalty wPlay) = GameState bPlay bPen wPlay (wPen+1) (updateBoard wPlay (updateBoard bPlay b))
                                                     | otherwise = GameState bPlay bPen wPlay wPen (updateBoard wPlay (updateBoard bPlay b))
 
 updateBoard :: Played -> Board -> Board
-updateBoard (Played (x,y)) b = replace2 (replace2 b y (getFromBoard b x)) x E --Does not work for pawn missed capture
+updateBoard (Played (x,y)) b = replace2 (replace2 b y (getFromBoard b x)) x E 
 updateBoard (Passed) b = b
 updateBoard (Goofed (x,y)) b = b
 updateBoard (Init) b = b
@@ -366,6 +369,12 @@ swap (Played (x1,y1)) (Played (x2,y2)) c b = replace2 (replace2 b x1 (getFromBoa
 
 playedToCood :: Played -> (Int,Int)
 playedToCood (Played (x,y)) = x
+
+pawnPenalty :: Played -> Bool
+pawnPenalty (BadPlacedPawn (x,y)) = True
+pawnPenalty (NullPlacedPawn) = True
+pawnPenalty p = False
+
 
 ---2D list utility functions-------------------------------------------------------
 
