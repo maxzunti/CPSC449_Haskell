@@ -32,7 +32,6 @@ import System.Exit (exitSuccess)
 --Custom Types------------------------------------------------------
 --None, apparently
 
-
 ---Main-------------------------------------------------------------
 
 -- | The main entry, which just calls 'main'' with the command line arguments.
@@ -55,7 +54,7 @@ main' args = do
     --Print the board
     putStrLn (show $ GameState (blackPlay initBoard) (blackPen initBoard) (whitePlay initBoard) (whitePen initBoard) (theBoard initBoard))
     finalGameState <- mainLoop stratList initBoard
-
+    putStrLn " "
     {-
     printGameState initBoard -- dummy call
     putStrLn "\nThe initial board:"
@@ -104,7 +103,7 @@ mainLoop (b:w:[]) g =
                         -- End game if both players pass
                         if ((fromJust bMove) == []) && ((fromJust wMove) == [])
                         then do
-                          printWinner b w g
+                          printWinnerDoublePass b w g
                           exitSuccess
                         else putStrLn " "
 
@@ -150,11 +149,9 @@ mainLoop (b:w:[]) g =
                         --return $ mainLoop (b:w:[]) initBoard
                         -- doesn't
                         else do
-                        printWinner b w g
-                         -- GAMEOVER, PRINT WINNER
-                        --if (checkForWinner g == WHITE)
-                        --then putStrLn $ "have winrar White"
-                        --else putStrLn $ "have winrar Black"
+                        if (checkForWinner g == WHITE)
+                        then putStrLn $ "have winrar White"
+                        else putStrLn $ "have winrar Black"
                         return $ initBoard
                         -- TODO: if (winner) then end, else
                         --
@@ -162,8 +159,8 @@ mainLoop _ _ = do putStrLn "Something broke"
                   exitSuccess
                   return $ initBoard
 --black strat white strat gamestate
-printWinner :: Strat -> Strat -> GameState -> IO()
-printWinner b w (GameState _ _ _ _ board) = if (bp == wp)
+printWinnerDoublePass :: Strat -> Strat -> GameState -> IO()
+printWinnerDoublePass b w (GameState _ _ _ _ board) = if (bp == wp)
                     then putStrLn $"Both Win! Black (" ++ (stratToString b) ++ "): " ++ (show bp) ++ "  White (" ++ (stratToString w) ++ "): " ++ (show wp)
                     else if (bp > wp)
                         then putStrLn $"Black Wins! Black (" ++ (stratToString b) ++ "): " ++ (show bp) ++ "  White (" ++ (stratToString w) ++ "): " ++ (show wp)
@@ -182,6 +179,7 @@ getGameStatePawnPlace bpp wpp (GameState bplay bpen wplay wpen board) =
       where gs = (GameState bplay bpen wplay wpen board)
 
 findPawnPlay' :: [(Int,Int)] -> Strat -> Player -> GameState -> IO(Played)
+findPawnPlay' [] _ _ _ = return None
 findPawnPlay' (x:y:[]) s p (GameState a b c d board) = do
                     if (((getFromBoard board y) == BP) || ((getFromBoard board y) == WP))
                     then if (pawnPlacementCheck (x:y:[]) p)
@@ -201,19 +199,27 @@ findPawnPlay (x:y:[]) s p (GameState a b c d board) = do
                             else if (isEmptyCell x board )
                               then do
                                 des <-  (getPawnPlaceMove s (GameState a b c d board) p) -- get pawn placement move
-                                return $PlacedPawn (y, ((fromJust des) !! 0))
+                                if (fromJust des == [])
+                                then return NullPlacedPawn
+                                else return $PlacedPawn (y, ((fromJust des) !! 0))
                               else do
                                 des <-  (getPawnPlaceMove s (GameState a b c d board) p) -- get pawn placement move
-                                return $BadPlacedPawn (y, ((fromJust des) !! 0))
+                                if (fromJust des == [])
+                                then return NullPlacedPawn
+                                else return $BadPlacedPawn (y, ((fromJust des) !! 0))
                           else if (length (getAllPieceCoor 0 BK board) < 2)
                             then return $UpgradedPawn2Knight y
                             else if (isEmptyCell x board )
                               then do
                                 des <-  (getPawnPlaceMove s (GameState a b c d board) p) -- get pawn placement move
-                                return $PlacedPawn (y, ((fromJust des) !! 0))
+                                if (fromJust des == [])
+                                then return NullPlacedPawn
+                                else return $PlacedPawn (y, ((fromJust des) !! 0))
                               else do
                                 des <-  (getPawnPlaceMove s (GameState a b c d board) p) -- get pawn placement move
-                                return $BadPlacedPawn (y, ((fromJust des) !! 0))
+                                if (fromJust des == [])
+                                then return NullPlacedPawn
+                                else return $BadPlacedPawn (y, ((fromJust des) !! 0))
                       else return None
 
 pawnPlacementCheck :: [(Int,Int)] -> Player -> Bool

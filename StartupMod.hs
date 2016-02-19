@@ -23,6 +23,13 @@ stringToStrat s | (s == "human") = HUMAN
                 | (s == "simple") = SIMPLE
                 | otherwise = INVALIDSTRAT -- Shouldn't be able to hit this
 
+-- Translate a string to an elem of type Strat
+stratToString :: Strat -> String
+stratToString s | (s == HUMAN) = "human"
+                | (s == KNIGHT) = "knightmare"
+                | (s == SIMPLE) = "simple"
+                | otherwise = "INVALIDSTRAT" -- Shouldn't be able to hit this
+
 
 --interactive mode
 interactiveMode :: IO [Strat]

@@ -9,7 +9,7 @@ import GameRules
 -- Gets input from user and return
 simpleStrat    :: Chooser
 simpleStrat g Normal        p = if (p == White) then do return (Just (getWPMove 0 0 Normal g)) else do return (Just (getBPMove 0 0 Normal g))
-simpleStrat g PawnPlacement p = if (p == White) then do return (Just (getEmptyCells g)) else do return (Just (getEmptyCells g))
+simpleStrat g PawnPlacement p = if (p == White) then do return (Just (filterWhiteEmpty( getEmptyCells g))) else do return (Just (filterBlackEmpty(getEmptyCells g)))
 
 --get coodinates for all specified pieces INT HAS TO BE 0!!!
 getAllPieceCoor :: Int -> Cell -> Board -> [(Int, Int)]
@@ -49,6 +49,19 @@ isEmptyCell x board = if ((getFromBoard board x) == E )
 getEmptyCells :: GameState -> [(Int, Int)]
 getEmptyCells (GameState _ _ _ _ board) = (getAllPieceCoor 0 E board)
 
+--Filters the empty cells on the bottom row
+filterWhiteEmpty :: [(Int, Int)] -> [(Int, Int)]
+filterWhiteEmpty (x:xs) = filter func (x:xs)
+    where func :: (Int, Int) -> Bool
+          func (x, y) = if (y == 4) then False else True
+
+--Filters the empty cells on the top row
+filterBlackEmpty :: [(Int, Int)] -> [(Int, Int)]
+filterBlackEmpty list = filter func list
+    where func :: (Int, Int) -> Bool
+          func (x, y) = if (y == 0) then False else True
+
+
 --Gives the first valid movement of a white pawn
 getWPMove :: Int -> Int -> PlayType -> GameState -> [(Int, Int)] --pawn index, possible moves Index, GameState
 getWPMove n m pt (GameState bplay bpenalty wplay wpenalty board) =
@@ -56,7 +69,7 @@ getWPMove n m pt (GameState bplay bpenalty wplay wpenalty board) =
           then if (pt == Normal)then [pos, mov] else [mov]
           else if (m < length wmList)
                then getWPMove n (m+1) pt gs
-               else if (n > length wpList)
+               else if (n >= length wpList)
                then []
                else getWPMove (n+1) 0 pt gs
 
@@ -74,7 +87,7 @@ getBPMove n m pt (GameState bplay bpenalty wplay wpenalty board) =
           then if (pt == Normal)then [pos, mov] else [mov]
           else if (m < length bmList)
                then getBPMove n (m+1) pt gs
-               else if (n > length bpList)
+               else if (n >= length bpList)
                then []
                else getBPMove (n+1) 0 pt gs
 

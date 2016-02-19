@@ -50,6 +50,7 @@ data WinState = BLACK | WHITE | DRAW | NONE deriving (Eq)
 -- MOVE LEGALITY CHECKERS
 -- Filter move to Normal or PawnPlacement checkers
 isValidMove :: [(Int,Int)] -> GameState -> PlayType -> Player -> Result
+isValidMove [] _ _ _ = VALID
 isValidMove i g t p = --Proceed iff none of the entries are out of bounds
                      if (null (filter outOfBounds i))
                         then if (pieceOwned (head i) g p)
