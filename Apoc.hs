@@ -150,8 +150,8 @@ mainLoop (b:w:[]) g =
                         -- doesn't
                         else do
                         if (checkForWinner g == WHITE)
-                        then putStrLn $ "have winrar White"
-                        else putStrLn $ "have winrar Black"
+                        then putStrLn $ "White Wins!"
+                        else putStrLn $ "Black Wins!"
                         return $ initBoard
                         -- TODO: if (winner) then end, else
                         --
@@ -167,6 +167,7 @@ printWinnerDoublePass b w (GameState _ _ _ _ board) = if (bp == wp)
                         else putStrLn $"White Wins! Black (" ++ (stratToString b) ++ "): " ++ (show bp) ++ "  White (" ++ (stratToString w) ++ "): " ++ (show wp)
             where bp = length (getAllPieceCoor 0 BP board)
                   wp = length (getAllPieceCoor 0 WP board)
+
 
 getGameStatePawnPlace :: Played -> Played -> GameState -> IO(GameState)
 getGameStatePawnPlace bpp wpp (GameState bplay bpen wplay wpen board) =
