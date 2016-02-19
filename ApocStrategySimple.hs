@@ -9,7 +9,7 @@ import GameRules
 -- Gets input from user and return
 simpleStrat    :: Chooser
 simpleStrat g Normal        p = if (p == White) then do return (Just (getWPMove 0 0 Normal g)) else do return (Just (getBPMove 0 0 Normal g))
-simpleStrat g PawnPlacement p = if (p == White) then do return (Just (getWPMove 0 0 PawnPlacement g)) else do return (Just (getBPMove 0 0 PawnPlacement g))
+simpleStrat g PawnPlacement p = if (p == White) then do return (Just (getEmptyCells g)) else do return (Just (getEmptyCells g))
 
 --get coodinates for all specified pieces INT HAS TO BE 0!!!
 getAllPieceCoor :: Int -> Cell -> Board -> [(Int, Int)]
@@ -38,6 +38,16 @@ getNext :: Int -> [(Int, Int)] -> (Int, Int)
 getNext _ [] = (-1, -1)
 getNext 0 list = head list
 getNext i (x:xs) = getNext (i-1) xs
+
+--Checks if cell is empty
+isEmptyCell :: (Int, Int) -> Board -> Bool
+isEmptyCell x board = if ((getFromBoard board x) == E )
+                      then True
+                      else False
+
+--Gets an empty cell
+getEmptyCells :: GameState -> [(Int, Int)]
+getEmptyCells (GameState _ _ _ _ board) = (getAllPieceCoor 0 E board)
 
 --Gives the first valid movement of a white pawn
 getWPMove :: Int -> Int -> PlayType -> GameState -> [(Int, Int)] --pawn index, possible moves Index, GameState

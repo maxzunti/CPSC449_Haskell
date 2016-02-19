@@ -172,10 +172,6 @@ getGameStatePawnPlace bpp wpp (GameState bplay bpen wplay wpen board) =
     else return gs
       where gs = (GameState bplay bpen wplay wpen board)
 
-isEmptyCell :: (Int, Int) -> Board -> Bool
-isEmptyCell x board = if ((getFromBoard board x) == E )
-                      then True
-                      else False
 findPawnPlay' :: [(Int,Int)] -> Strat -> Player -> GameState -> IO(Played)
 findPawnPlay' (x:y:[]) s p (GameState a b c d board) = do
                     if (pawnPlacementCheck (x:y:[]) p)
@@ -184,17 +180,18 @@ findPawnPlay' (x:y:[]) s p (GameState a b c d board) = do
 
 findPawnPlay :: [(Int,Int)] -> Strat -> Player -> GameState -> IO(Played)
 findPawnPlay (x:y:[]) s p (GameState a b c d board) = do
-                      des <-  (getPawnPlaceMove s (GameState a b c d board) p) -- get pawn okacment move
+
+                      des <-  (getPawnPlaceMove s (GameState a b c d board) p) -- get pawn placement move
                       if (pawnPlacementCheck (x:y:[]) p)
                       then
                         if (p == White)
                           then if (length (getAllPieceCoor 0 WK board) < 2)
-                            then return $UpgradedPawn2Knight ((fromJust des) !! 0)
+                            then return $UpgradedPawn2Knight y
                             else if (isEmptyCell x board )
                               then return $PlacedPawn (y, ((fromJust des) !! 0))
                               else return $BadPlacedPawn (y, ((fromJust des) !! 0))
                           else if (length (getAllPieceCoor 0 BK board) < 2)
-                            then return $UpgradedPawn2Knight ((fromJust des) !! 0)
+                            then return $UpgradedPawn2Knight y
                             else if (isEmptyCell x board )
                               then return $PlacedPawn (y, ((fromJust des) !! 0))
                               else return $BadPlacedPawn (y, ((fromJust des) !! 0))
