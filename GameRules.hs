@@ -102,7 +102,10 @@ isValidPawnMove :: [(Int,Int)] -> GameState -> Player -> Result
 isValidPawnMove (b:a:[]) g p = if (p == White)
                                    then if (snd a == snd b + 1) -- Must move 'down'
                                        then if (fst a == fst b)
-                                       then checkDest a g p
+                                           then if (getFromBoard (theBoard g) a == E)
+                                           then VALID
+                                           else INVALID
+                                       --then checkDest a g p
                                        else if ((checkDest a g p == CAPTURE) &&
                                                ((fst a == fst b + 1) || (fst a == fst b - 1)))
                                        then CAPTURE
@@ -111,7 +114,9 @@ isValidPawnMove (b:a:[]) g p = if (p == White)
                                else if (p == Black)
                                    then if (snd a == snd b - 1) -- Must move 'up'
                                        then if (fst a == fst b)
-                                       then checkDest a g p
+                                           then if (getFromBoard (theBoard g) a == E)
+                                           then VALID
+                                           else INVALID
                                        else if ((checkDest a g p == CAPTURE) &&
                                                ((fst a == fst b + 1) || (fst a == fst b - 1)))
                                        then CAPTURE
@@ -121,6 +126,8 @@ isValidPawnMove (b:a:[]) g p = if (p == White)
 
 
 -- See who owns the targeted cell
+-- I didn't think this through, so this function has ambiguous purpose at best
+-- Regardless, it should work for what it does
 checkDest :: (Int,Int) -> GameState -> Player -> Result
 checkDest l g p = if (getFromBoard (theBoard g) l == E)
                   then VALID    -- Empty square
