@@ -164,7 +164,11 @@ mainLoop _ _ = do putStrLn "Something broke"
 
 getGameStatePawnPlace :: Played -> Played -> GameState -> IO(GameState)
 getGameStatePawnPlace bpp wpp (GameState bplay bpen wplay wpen board) =
-  if (wpp /= None || bpp /= None) then return (GameState bpp bpen wpp wpen board)
+  if (wpp /= None || bpp /= None)
+    then do
+          x <- updateMoves bpp wpp (GameState bplay bpen wplay wpen board)
+          putStrLn (show $ x)
+          return x
     else return gs
       where gs = (GameState bplay bpen wplay wpen board)
 
