@@ -55,7 +55,6 @@ main' args = do
     --Print the board
     putStrLn (show $ GameState (blackPlay initBoard) (blackPen initBoard) (whitePlay initBoard) (whitePen initBoard) (theBoard initBoard))
     finalGameState <- mainLoop stratList initBoard
-    putStrLn("It's overrrr!");
 
     {-
     printGameState initBoard -- dummy call
@@ -103,11 +102,11 @@ mainLoop (b:w:[]) g =
                         wMove <- getStratMove w g White
 
                         -- End game if both players pass
-                        if ((bMove == Nothing) && (wMove == Nothing))
+                        if ((fromJust bMove) == []) && ((fromJust wMove) == [])
                         then do
-                          putStrLn "Both Pass, ending game"
+                          printWinner b w g
                           exitSuccess
-                        else putStrLn " " --TODO: print actual ending message here
+                        else putStrLn " "
 
                         newg <- findPlayed (fromJust bMove) (fromJust wMove) g
 
@@ -151,16 +150,26 @@ mainLoop (b:w:[]) g =
                         --return $ mainLoop (b:w:[]) initBoard
                         -- doesn't
                         else do
+                        printWinner b w g
                          -- GAMEOVER, PRINT WINNER
-                        if (checkForWinner g == WHITE)
-                        then putStrLn $ "have winrar White"
-                        else putStrLn $ "have winrar Black"
+                        --if (checkForWinner g == WHITE)
+                        --then putStrLn $ "have winrar White"
+                        --else putStrLn $ "have winrar Black"
                         return $ initBoard
                         -- TODO: if (winner) then end, else
                         --
 mainLoop _ _ = do putStrLn "Something broke"
                   exitSuccess
                   return $ initBoard
+--black strat white strat gamestate
+printWinner :: Strat -> Strat -> GameState -> IO()
+printWinner b w (GameState _ _ _ _ board) = if (bp == wp)
+                    then putStrLn $"Both Win! Black (" ++ (stratToString b) ++ "): " ++ (show bp) ++ "  White (" ++ (stratToString w) ++ "): " ++ (show wp)
+                    else if (bp > wp)
+                        then putStrLn $"Black Wins! Black (" ++ (stratToString b) ++ "): " ++ (show bp) ++ "  White (" ++ (stratToString w) ++ "): " ++ (show wp)
+                        else putStrLn $"White Wins! Black (" ++ (stratToString b) ++ "): " ++ (show bp) ++ "  White (" ++ (stratToString w) ++ "): " ++ (show wp)
+            where bp = length (getAllPieceCoor 0 BP board)
+                  wp = length (getAllPieceCoor 0 WP board)
 
 getGameStatePawnPlace :: Played -> Played -> GameState -> IO(GameState)
 getGameStatePawnPlace bpp wpp (GameState bplay bpen wplay wpen board) =
@@ -174,8 +183,10 @@ getGameStatePawnPlace bpp wpp (GameState bplay bpen wplay wpen board) =
 
 findPawnPlay' :: [(Int,Int)] -> Strat -> Player -> GameState -> IO(Played)
 findPawnPlay' (x:y:[]) s p (GameState a b c d board) = do
-                    if (pawnPlacementCheck (x:y:[]) p)
-                    then findPawnPlay (x:y:[]) s p (GameState a b c d board)
+                    if (((getFromBoard board y) == BP) || ((getFromBoard board y) == WP))
+                    then if (pawnPlacementCheck (x:y:[]) p)
+                        then findPawnPlay (x:y:[]) s p (GameState a b c d board)
+                        else return None
                     else return None
 
 findPawnPlay :: [(Int,Int)] -> Strat -> Player -> GameState -> IO(Played)
