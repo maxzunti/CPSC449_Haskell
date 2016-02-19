@@ -3,8 +3,8 @@ module StartupMod where
 import System.Exit (exitSuccess)
 
 listOfStrategy :: [String]
-listOfStrategy = ["human", "greedy", "random"]
-data Strat = HUMAN | GREEDY | RANDOMSTRAT | INVALIDSTRAT deriving (Eq)
+listOfStrategy = ["human", "knightmare", "simple"]
+data Strat = HUMAN | KNIGHT | SIMPLE | INVALIDSTRAT deriving (Eq)
 
 
 
@@ -19,8 +19,8 @@ getStrategies s = do return $ INVALIDSTRAT:INVALIDSTRAT:[]
 -- Translate a string to an elem of type Strat
 stringToStrat :: String -> Strat
 stringToStrat s | (s == "human") = HUMAN
-                | (s == "greedy") = GREEDY
-                | (s == "random") = RANDOMSTRAT
+                | (s == "knightmare") = KNIGHT
+                | (s == "simple") = SIMPLE
                 | otherwise = INVALIDSTRAT -- Shouldn't be able to hit this
 
 

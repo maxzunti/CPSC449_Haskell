@@ -22,8 +22,8 @@ import System.Environment
 import System.IO.Unsafe
 import ApocTools
 import ApocStrategyHuman
-import ApocStrategyGreedy
-import ApocStrategyRandom
+import ApocStrategyKnightmare
+import ApocStrategySimple
 import GameRules
 
 import StartupMod
@@ -111,8 +111,6 @@ mainLoop (b:w:[]) g =
 
                         newg <- findPlayed (fromJust bMove) (fromJust wMove) g
 
-
-
                         --TODO: Check move legality, update board / penalty accordingly
 
                         {-if (isValidMove (fromJust bMove) == VALID || CAPTURE)
@@ -128,13 +126,30 @@ mainLoop (b:w:[]) g =
 
                         --Print the board
                         putStrLn (show $ GameState (blackPlay newg) (blackPen newg) (whitePlay newg) (whitePen newg) (theBoard newg))
-                        -- The below works:
-                        newGs <- mainLoop (b:w:[]) newg    -- TODO: Need to pass a NEW GameState as arg
+
+                        bpp <- findPawnPlay' (fromJust bMove) b Black newg
+                        wpp <- findPawnPlay' (fromJust wMove) w White newg
+
+                        {-bpp <- do
+                          if (pawnPlacementCheck (fromJust bMove) Black) --checks top
+                          then findPawnPlay bMove b Black newg
+                          else None
+
+                        wpp <- do
+                        if (pawnPlacementCheck (fromJust wMove) White) --chekcs bottom
+                          then findPawnPlay wMove w White newg
+                          else None
+                            -}
+                        newNewg <- getGameStatePawnPlace bpp wpp newg
+                        --if (bpp != None || wpp != None)
+                        --  then do newNewg <- (GameState bpp (blackPen newg) wpp (whitePen newg) (theBoard newg))
+                        --  else do newNewg <- (returnGameState newg)
+
+                        newGs <- mainLoop (b:w:[]) newNewg   -- TODO: Need to pass a NEW GameState as arg
                         return $ newGs
                         -- but for some reason,
                         --return $ mainLoop (b:w:[]) initBoard
                         -- doesn't
-
                         else do
                          -- GAMEOVER, PRINT WINNER
                         if (checkForWinner g == WHITE)
@@ -147,18 +162,73 @@ mainLoop _ _ = do putStrLn "Something broke"
                   exitSuccess
                   return $ initBoard
 
--- Invoke "human" or "greedy" Chooser based on passed Strat
+getGameStatePawnPlace :: Played -> Played -> GameState -> IO(GameState)
+getGameStatePawnPlace bpp wpp (GameState bplay bpen wplay wpen board) =
+  if (wpp /= None || bpp /= None) then return (GameState bpp bpen wpp wpen board)
+    else return gs
+      where gs = (GameState bplay bpen wplay wpen board)
+
+isEmptyCell :: (Int, Int) -> Board -> Bool
+isEmptyCell x board = if ((getFromBoard board x) == E )
+                      then True
+                      else False
+findPawnPlay' :: [(Int,Int)] -> Strat -> Player -> GameState -> IO(Played)
+findPawnPlay' (x:y:[]) s p (GameState a b c d board) = do
+                    if (pawnPlacementCheck (x:y:[]) p)
+                    then findPawnPlay (x:y:[]) s p (GameState a b c d board)
+                    else return None
+
+findPawnPlay :: [(Int,Int)] -> Strat -> Player -> GameState -> IO(Played)
+findPawnPlay (x:y:[]) s p (GameState a b c d board) = do
+                      des <-  (getPawnPlaceMove s (GameState a b c d board) p) -- get pawn okacment move
+                      if (pawnPlacementCheck (x:y:[]) p)
+                      then
+                        if (p == White)
+                          then if (length (getAllPieceCoor 0 WK board) < 2)
+                            then return $UpgradedPawn2Knight ((fromJust des) !! 0)
+                            else if (isEmptyCell x board )
+                              then return $PlacedPawn (y, ((fromJust des) !! 0))
+                              else return $BadPlacedPawn (y, ((fromJust des) !! 0))
+                          else if (length (getAllPieceCoor 0 BK board) < 2)
+                            then return $UpgradedPawn2Knight ((fromJust des) !! 0)
+                            else if (isEmptyCell x board )
+                              then return $PlacedPawn (y, ((fromJust des) !! 0))
+                              else return $BadPlacedPawn (y, ((fromJust des) !! 0))
+                      else return None
+
+pawnPlacementCheck :: [(Int,Int)] -> Player -> Bool
+pawnPlacementCheck (_:(x, y):[]) p = if (p == White)
+                                     then if (y == 4)
+                                          then True
+                                          else False
+                                     else if (y == 0)
+                                          then True
+                                          else False
+
+
+getPawnPlaceMove :: Strat -> GameState ->  Player -> IO (Maybe [(Int,Int)])
+getPawnPlaceMove s g p  | (s == HUMAN) = do
+                                        x <- human g PawnPlacement p
+                                        return x
+                    | (s == SIMPLE) = do
+                                        x <- simpleStrat g PawnPlacement p
+                                        return x
+                    | (s == KNIGHT ) = do
+                                        x <- knightStrat g PawnPlacement p
+                                        return x
+
+-- Invoke "human" or "knoight" Chooser based on passed Strat
 -- Also determines if it should be a normal move or a pawn placement
--- FIXME: CURRENTLY DOESN'T WORK FOR GREEDY OR RANDOM
+
 getStratMove :: Strat -> GameState ->  Player -> IO (Maybe [(Int,Int)])
 getStratMove s g p   | (s == HUMAN) = do
                                         x <- human g Normal p
                                         return x
-                     | (s == RANDOMSTRAT) = do
-                                        x <- randomStrat g Normal p
+                     | (s == SIMPLE) = do
+                                        x <- simpleStrat g Normal p
                                         return x
-                     | (s == GREEDY ) = do
-                                        x <- greedyStrat g Normal p
+                     | (s == KNIGHT ) = do
+                                        x <- knightStrat g Normal p
                                         return x
 
 -- EXAMPLE
@@ -175,9 +245,9 @@ findPlayed b w g = do
         return x
 
 findPlayed' :: [(Int,Int)] -> [(Int, Int)] -> GameState -> PlayType -> PlayType -> IO(GameState)
-findPlayed' b w g bPt wPt | ((isValidMove b g bPt Black)== VALID) && ((isValidMove w g wPt White) == VALID)= bwValid b w g bPt wPt
-                          | ((isValidMove b g bPt Black)== VALID) && ((isValidMove w g wPt White) == INVALID)= bValidOnly b w g bPt wPt
-                          | ((isValidMove b g bPt Black)== INVALID) && ((isValidMove w g wPt White) == VALID)= wValidOnly b w g bPt wPt
+findPlayed' b w g bPt wPt | (((isValidMove b g bPt Black)== VALID) || ((isValidMove b g bPt Black)== CAPTURE)) && (((isValidMove w g wPt White) == VALID) || ((isValidMove w g wPt White) == CAPTURE))= bwValid b w g bPt wPt
+                          | (((isValidMove b g bPt Black)== VALID) || ((isValidMove b g bPt Black)== CAPTURE))  && ((isValidMove w g wPt White) == INVALID) = bValidOnly b w g bPt wPt
+                          | ((isValidMove b g bPt Black)== INVALID) && (((isValidMove w g wPt White) == VALID) || ((isValidMove w g wPt White) == CAPTURE)) = wValidOnly b w g bPt wPt
                           | otherwise = bwInvalid b w g bPt wPt
 
 bwValid :: [(Int,Int)] -> [(Int, Int)] -> GameState -> PlayType -> PlayType -> IO(GameState)
@@ -249,9 +319,9 @@ updateBoard (None) b = b
 data MoveType = NORMALMOVE | MISSCAPTURE | DOUBLECAPTURE | SWAP deriving (Eq)
 
 moveType :: Played -> Played -> MoveType
-moveType (Played (x1,y1)) (Played (x2,y2)) | ((x1 == y2) || (x2 == y1)) = MISSCAPTURE
+moveType (Played (x1,y1)) (Played (x2,y2)) | ((x1 == y2) && (y1 == x2)) = SWAP
+                                           | ((x1 == y2) || (x2 == y1)) = MISSCAPTURE
                                            | (y1 == y2) = DOUBLECAPTURE
-                                           | (x1 == y2 && y1 == x2) = SWAP
                                            | otherwise = NORMALMOVE
 moveType b w = NORMALMOVE
 
