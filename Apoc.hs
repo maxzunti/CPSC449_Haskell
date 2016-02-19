@@ -181,20 +181,28 @@ findPawnPlay' (x:y:[]) s p (GameState a b c d board) = do
 findPawnPlay :: [(Int,Int)] -> Strat -> Player -> GameState -> IO(Played)
 findPawnPlay (x:y:[]) s p (GameState a b c d board) = do
 
-                      des <-  (getPawnPlaceMove s (GameState a b c d board) p) -- get pawn placement move
+                      --des <-  (getPawnPlaceMove s (GameState a b c d board) p) -- get pawn placement move
                       if (pawnPlacementCheck (x:y:[]) p)
                       then
                         if (p == White)
                           then if (length (getAllPieceCoor 0 WK board) < 2)
                             then return $UpgradedPawn2Knight y
                             else if (isEmptyCell x board )
-                              then return $PlacedPawn (y, ((fromJust des) !! 0))
-                              else return $BadPlacedPawn (y, ((fromJust des) !! 0))
+                              then do
+                                des <-  (getPawnPlaceMove s (GameState a b c d board) p) -- get pawn placement move
+                                return $PlacedPawn (y, ((fromJust des) !! 0))
+                              else do
+                                des <-  (getPawnPlaceMove s (GameState a b c d board) p) -- get pawn placement move
+                                return $BadPlacedPawn (y, ((fromJust des) !! 0))
                           else if (length (getAllPieceCoor 0 BK board) < 2)
                             then return $UpgradedPawn2Knight y
                             else if (isEmptyCell x board )
-                              then return $PlacedPawn (y, ((fromJust des) !! 0))
-                              else return $BadPlacedPawn (y, ((fromJust des) !! 0))
+                              then do
+                                des <-  (getPawnPlaceMove s (GameState a b c d board) p) -- get pawn placement move
+                                return $PlacedPawn (y, ((fromJust des) !! 0))
+                              else do
+                                des <-  (getPawnPlaceMove s (GameState a b c d board) p) -- get pawn placement move
+                                return $BadPlacedPawn (y, ((fromJust des) !! 0))
                       else return None
 
 pawnPlacementCheck :: [(Int,Int)] -> Player -> Bool
