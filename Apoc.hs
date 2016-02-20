@@ -100,13 +100,6 @@ mainLoop (b:w:[]) g =
                         bMove <- getStratMove b g Black
                         wMove <- getStratMove w g White
 
-                        -- End game if both players pass
-                        if ((fromJust bMove) == []) && ((fromJust wMove) == [])
-                        then do
-                          printWinnerDoublePass b w g
-                          exitSuccess
-                        else putStrLn " "
-
                         newg <- findPlayed (fromJust bMove) (fromJust wMove) g
 
                         --TODO: Check move legality, update board / penalty accordingly
@@ -127,6 +120,13 @@ mainLoop (b:w:[]) g =
 
                         bpp <- findPawnPlay' (fromJust bMove) b Black newg
                         wpp <- findPawnPlay' (fromJust wMove) w White newg
+
+                        -- End game if both players pass
+                        if ((fromJust bMove) == []) && ((fromJust wMove) == [])
+                        then do
+                          printWinnerDoublePass b w g
+                          exitSuccess
+                        else putStrLn " "
 
                         {-bpp <- do
                           if (pawnPlacementCheck (fromJust bMove) Black) --checks top
@@ -149,9 +149,12 @@ mainLoop (b:w:[]) g =
                         --return $ mainLoop (b:w:[]) initBoard
                         -- doesn't
                         else do
-                        if (checkForWinner g == WHITE)
-                        then putStrLn $ "White Wins!"
-                        else putStrLn $ "Black Wins!"
+                        if (checkForWinner g == NONE)
+                        then putStrLn $ "Both Wins!"
+                        else
+                            if (checkForWinner g == WHITE)
+                            then putStrLn $ "White Wins!"
+                            else putStrLn $ "Black Wins!"
                         return $ initBoard
                         -- TODO: if (winner) then end, else
                         --
@@ -334,7 +337,7 @@ updateGamestate (GameState bPlay bPen wPlay wPen b) | (moveType bPlay wPlay == M
                                                     | otherwise = GameState bPlay bPen wPlay wPen (updateBoard wPlay (updateBoard bPlay b))
 
 updateBoard :: Played -> Board -> Board
-updateBoard (Played (x,y)) b = replace2 (replace2 b y (getFromBoard b x)) x E 
+updateBoard (Played (x,y)) b = replace2 (replace2 b y (getFromBoard b x)) x E
 updateBoard (Passed) b = b
 updateBoard (Goofed (x,y)) b = b
 updateBoard (Init) b = b
