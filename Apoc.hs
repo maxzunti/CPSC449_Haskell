@@ -269,17 +269,20 @@ printGameState a = do
                    putStrLn "GameState blackPlay: "
                    putStrLn $ show $ blackPlay a
 
+-- | The 'findPlayed' function takes the black and white moves and updates the gamestate.
 findPlayed :: [(Int,Int)] -> [(Int, Int)] -> GameState -> IO(GameState)
 findPlayed b w g = do
         x <- findPlayed' b w g (mapMoveToPT b) (mapMoveToPT w)
         return x
 
+-- | The 'findPlayed'' function determines the validity of moves the updates the gamestate based on those moves.
 findPlayed' :: [(Int,Int)] -> [(Int, Int)] -> GameState -> PlayType -> PlayType -> IO(GameState)
 findPlayed' b w g bPt wPt | (((isValidMove b g bPt Black)== VALID) || ((isValidMove b g bPt Black)== CAPTURE)) && (((isValidMove w g wPt White) == VALID) || ((isValidMove w g wPt White) == CAPTURE))= bwValid b w g bPt wPt
                           | (((isValidMove b g bPt Black)== VALID) || ((isValidMove b g bPt Black)== CAPTURE))  && ((isValidMove w g wPt White) == INVALID) = bValidOnly b w g bPt wPt
                           | ((isValidMove b g bPt Black)== INVALID) && (((isValidMove w g wPt White) == VALID) || ((isValidMove w g wPt White) == CAPTURE)) = wValidOnly b w g bPt wPt
                           | otherwise = bwInvalid b w g bPt wPt
 
+-- | The 'bwValid' function updates the gamestate based on both black and white having valid moves. 
 bwValid :: [(Int,Int)] -> [(Int, Int)] -> GameState -> PlayType -> PlayType -> IO(GameState)
 bwValid [] [] (GameState bPlay bPen wPlay wPen board) bPt wPt = do
                                                                 x <- updateMoves (Passed) (Passed) (GameState bPlay bPen wPlay wPen board)
@@ -294,6 +297,7 @@ bwValid b w (GameState bPlay bPen wPlay wPen board) bPt wPt = do
   x <- updateMoves (Played (b !! 0,b !! 1)) (Played (w !! 0,w !! 1)) (GameState bPlay bPen wPlay wPen board)
   return x
 
+-- | The 'wValidOnly' function updates the gamstate based on only the white move being valid.
 wValidOnly :: [(Int,Int)] -> [(Int, Int)] -> GameState -> PlayType -> PlayType -> IO(GameState)
 wValidOnly b [] (GameState bPlay bPen wPlay wPen board) bPt wPt = do
   x <- updateMoves (Goofed (b !! 0,b !! 1)) (Passed) (GameState bPlay (bPen + 1) wPlay wPen board)
@@ -302,6 +306,7 @@ wValidOnly b w (GameState bPlay bPen wPlay wPen board) bPt wPt = do
   x <- updateMoves (Goofed (b !! 0,b !! 1)) (Played (w !! 0,w !! 1)) (GameState bPlay (bPen + 1) wPlay wPen board)
   return x
 
+-- | The 'bValidOnly' function updates the gamstate based on only the black move being valid.
 bValidOnly :: [(Int,Int)] -> [(Int, Int)] -> GameState -> PlayType -> PlayType -> IO(GameState)
 bValidOnly [] w (GameState bPlay bPen wPlay wPen board) bPt wPt = do
   x <- updateMoves (Passed) (Goofed (w !! 0,w !! 1)) (GameState bPlay bPen wPlay (wPen + 1) board)
@@ -310,23 +315,24 @@ bValidOnly b w (GameState bPlay bPen wPlay wPen board) bPt wPt = do
   x <- updateMoves (Played (b !! 0,b !! 1)) (Goofed (w !! 0,w !! 1)) (GameState bPlay bPen wPlay (wPen + 1) board)
   return x
 
+-- | The 'bwInvalid' function updates the gamestate based on both black and white having invalid moves.
 bwInvalid :: [(Int,Int)] -> [(Int, Int)] -> GameState -> PlayType -> PlayType -> IO(GameState)
 bwInvalid b w (GameState bPlay bPen wPlay wPen board) bPt wPt = do
   x <- updateMoves (Goofed (b !! 0,b !! 1)) (Goofed (w !! 0,w !! 1)) (GameState bPlay (bPen + 1) wPlay (wPen + 1) board)
   return x
 
+-- | The 'mapMoveToPT' function extracts the PlayType from a move.
 mapMoveToPT :: [a] -> PlayType
 mapMoveToPT [] = Normal
 mapMoveToPT x = if (length x == 2)
                 then Normal
                 else PawnPlacement
 
--- Must be a valid move
--- Move must be in the form of played
+-- | The 'updateMoves' function takes the black and white moves, and updates the gamestate.
 updateMoves :: Played -> Played -> GameState -> IO(GameState)
 updateMoves b w (GameState x bP y wP bd) = do return (updateGamestate (GameState b bP w wP bd))
 
--- Must be a legal move
+-- | The 'updateGamestate' function updates the values of the gamestate for a turn.
 updateGamestate :: GameState -> GameState
 updateGamestate (GameState bPlay bPen wPlay wPen b) | (moveType bPlay wPlay == MISSCAPTURE) = GameState bPlay bPen wPlay wPen (misscapture bPlay wPlay b)
                                                     | (moveType bPlay wPlay == DOUBLECAPTURE) = GameState bPlay bPen wPlay wPen (doublecapture bPlay wPlay b)
@@ -336,6 +342,7 @@ updateGamestate (GameState bPlay bPen wPlay wPen b) | (moveType bPlay wPlay == M
                                                     | (pawnPenalty wPlay) = GameState bPlay bPen wPlay (wPen+1) (updateBoard wPlay (updateBoard bPlay b))
                                                     | otherwise = GameState bPlay bPen wPlay wPen (updateBoard wPlay (updateBoard bPlay b))
 
+-- | The 'updateBoard' function applys a move to a board.
 updateBoard :: Played -> Board -> Board
 updateBoard (Played (x,y)) b = replace2 (replace2 b y (getFromBoard b x)) x E
 updateBoard (Passed) b = b
@@ -349,8 +356,15 @@ updateBoard (BadPlacedPawn (x,y)) b = b
 updateBoard (NullPlacedPawn) b = b
 updateBoard (None) b = b
 
-data MoveType = NORMALMOVE | MISSCAPTURE | DOUBLECAPTURE | SWAP deriving (Eq)
+{- | This type is used by 'moveType' to tell the 'moveType' function whether the move is 
+of type normal, a miss capture, a double capture, or a swap.
+-}
+data MoveType = NORMALMOVE -- ^ A normal move.
+| MISSCAPTURE              -- ^ A missed capture move.
+| DOUBLECAPTURE            -- ^ A double capture move.
+| SWAP deriving (Eq)       -- ^ A swap move.
 
+-- | The 'moveType' function determines what kind of move was made.
 moveType :: Played -> Played -> MoveType
 moveType (Played (x1,y1)) (Played (x2,y2)) | ((x1 == y2) && (y1 == x2)) = SWAP
                                            | ((x1 == y2) || (x2 == y1)) = MISSCAPTURE
@@ -358,22 +372,27 @@ moveType (Played (x1,y1)) (Played (x2,y2)) | ((x1 == y2) && (y1 == x2)) = SWAP
                                            | otherwise = NORMALMOVE
 moveType b w = NORMALMOVE
 
+-- | The 'misscapture' function updates the board based on a misscature move.
 misscapture :: Played -> Played -> Board -> Board
 misscapture (Played (sb,db)) (Played (sw,dw)) b | (sb == dw) = replace2 (replace2 (replace2 b db (getFromBoard b sb)) dw (getFromBoard b sw)) sw E
                                                 | (sw == db) = replace2 (replace2 (replace2 b dw (getFromBoard b sw)) db (getFromBoard b sb)) sb E
 
+-- | The 'doublecapture' function updates the board based on a doublecapture move.
 doublecapture :: Played -> Played -> Board -> Board
 doublecapture (Played (x1,y1)) (Played (x2,y2)) b  | (((getFromBoard b x1) == BP) && ((getFromBoard b x2) == WP)) = replace2 (replace2 b x1 E) x2 E
                                                    | (((getFromBoard b x1) == BK) && ((getFromBoard b x2) == WK)) = replace2 (replace2 b x1 E) x2 E
                                                    | ((getFromBoard b x1) == BK) = replace2 (replace2 (replace2 b y1 (getFromBoard b x1)) x1 E) x2 E
                                                    | ((getFromBoard b x2) == WK) = replace2 (replace2 (replace2 b y2 (getFromBoard b x2)) x2 E) x1 E
 
+-- | The 'swap' function updates the board based on a swap move.							   
 swap :: Played -> Played -> Cell -> Board -> Board
 swap (Played (x1,y1)) (Played (x2,y2)) c b = replace2 (replace2 b x1 (getFromBoard b x2)) x2 c
 
+-- | The 'playedToCood' function finds the coodinates of the source of a move.
 playedToCood :: Played -> (Int,Int)
 playedToCood (Played (x,y)) = x
 
+-- | The 'pawnPenalty' function determines if a penalty based on pawnplacement should be added.
 pawnPenalty :: Played -> Bool
 pawnPenalty (BadPlacedPawn (x,y)) = True
 pawnPenalty (NullPlacedPawn) = True
