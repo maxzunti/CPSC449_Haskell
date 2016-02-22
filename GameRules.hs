@@ -172,7 +172,9 @@ upgradeOrReplace g p = if (p == White)
 -- Check GameState to see if we have a winner
 -- NOTE: Doesn't check if both players pass
 checkForWinner :: GameState -> WinState
-checkForWinner g = if ((countPieces g WhitePawn == 0) || (whitePen g >= 2))
+checkForWinner g = if (whitePen g >= 2 && blackPen g >= 2)
+                   then DRAW
+                   else if ((countPieces g WhitePawn == 0) || (whitePen g >= 2))
                    then BLACK
                    else if ((countPieces g BlackPawn == 0) || (blackPen g >= 2))
                    then WHITE
