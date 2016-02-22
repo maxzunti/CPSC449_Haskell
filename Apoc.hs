@@ -359,10 +359,7 @@ updateBoard (None) b = b
 {- | This type is used by 'moveType' to tell the 'moveType' function whether the move is 
 of type normal, a miss capture, a double capture, or a swap.
 -}
-data MoveType = NORMALMOVE -- ^ A normal move.
-| MISSCAPTURE              -- ^ A missed capture move.
-| DOUBLECAPTURE            -- ^ A double capture move.
-| SWAP deriving (Eq)       -- ^ A swap move.
+data MoveType = NORMALMOVE | MISSCAPTURE | DOUBLECAPTURE | SWAP deriving (Eq)
 
 -- | The 'moveType' function determines what kind of move was made.
 moveType :: Played -> Played -> MoveType
