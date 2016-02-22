@@ -15,6 +15,7 @@ express or implied warranty.
 
 module Main(main) where
 
+import System.Random
 import Control.Monad.Trans.State.Lazy
 import Data.Maybe (fromJust, isNothing)
 import Data.List
@@ -132,8 +133,8 @@ mainLoop (b:w:[]) g =
                         --return $ mainLoop (b:w:[]) initBoard
                         -- doesn't
                         else do
-                        if (checkForWinner g == NONE)
-                        then putStrLn $ "Both Wins!"
+                        if (checkForWinner g == DRAW)
+                        then putStrLn $ "It's a draw! You're all losers!"
                         else
                             if (checkForWinner g == WHITE)
                             then putStrLn $ "White Wins!"
