@@ -47,40 +47,12 @@ main'           :: [String] -> IO()
 main' args = do
     stratList <- getStrategies args -- stratList has type [Strat], stores "BlkStrat:WhtStrat:[]"
     checkInvalid stratList -- exits if invalid
-    --putStrLn "Begin actual loop: "
-    --Print the board
+
     putStrLn (show $ GameState (blackPlay initBoard) (blackPen initBoard) (whitePlay initBoard) (whitePen initBoard) (theBoard initBoard))
     finalGameState <- mainLoop stratList initBoard
     putStrLn " "
-    {-
-    printGameState initBoard -- dummy call
-    putStrLn "\nThe initial board:"
-    print initBoard
 
-    putStrLn $ "\nThe initial board with back human (the placeholder for human) strategy having played one move\n"
-               ++ "(clearly illegal as we must play in rounds!):"
-    move <- human (initBoard) Normal Black
-    putStrLn (show $ GameState (if move==Nothing
-                                then Passed
-                                else Played (head (fromJust move), head (tail (fromJust move))))
-                               (blackPen initBoard)
-                               (Passed)
-                               (whitePen initBoard)
-                               (replace2 (replace2 (theBoard initBoard)
-                                                   ((fromJust move) !! 1)
-                                                   (getFromBoard (theBoard initBoard) ((fromJust move) !! 0)))
-                                         ((fromJust move) !! 0)
-                                         E))
-    -}
-
-
--- takes Gamestate -> PawnPlacement and returns winner
-{-mainloop :: GameState -> Int -> Int
-mainloop g p = if (gameOver g)
-             then winner g
-             else mainloop (nextTurn g p) p
--}
-
+-- | Function for main loop
 -- mainLoop calls itself, passing Strats and the current state
 -- before returning the new GameState
 mainLoop :: [Strat] -> GameState -> IO GameState
@@ -90,48 +62,33 @@ mainLoop (b:w:[]) g =
                         if ((checkForWinner g) == NONE)
                         then do -- GAME NOT OVER
 
-                        --These calls automatically return the correct type of [(Int,Int)] list
-                        -- depending on whether or not we should upgrade
-                        -- **** If the returned list has TWO entries, then this is a NORMAL turn
-                        -- If the returned list has ONE entry, this is a PAWNPLACEMENT
+                        --Get Normal move
+
                         bMove <- getStratMove b g Black
                         wMove <- getStratMove w g White
 
                         newg <- findPlayed (fromJust bMove) (fromJust wMove) g
 
-                        --Print the board
+                        --Does a normal move
                         putStrLn (show $ GameState (blackPlay newg) (blackPen newg) (whitePlay newg) (whitePen newg) (theBoard newg))
 
                         bpp <- findPawnPlay' (fromJust bMove) b Black newg
                         wpp <- findPawnPlay' (fromJust wMove) w White newg
 
-                        -- End game if both players pass
+                        -- Print board
                         if ((fromJust bMove) == []) && ((fromJust wMove) == [])
                         then do
                           printWinnerDoublePass b w g
                           exitSuccess
                         else putStrLn " "
-
-                        {-bpp <- do
-                          if (pawnPlacementCheck (fromJust bMove) Black) --checks top
-                          then findPawnPlay bMove b Black newg
-                          else None
-
-                        wpp <- do
-                        if (pawnPlacementCheck (fromJust wMove) White) --chekcs bottom
-                          then findPawnPlay wMove w White newg
-                          else None
-                            -}
+                        
+                        --checks if a pawnplacement or upgrade has to happen 
                         newNewg <- getGameStatePawnPlace bpp wpp newg
-                        --if (bpp != None || wpp != None)
-                        --  then do newNewg <- (GameState bpp (blackPen newg) wpp (whitePen newg) (theBoard newg))
-                        --  else do newNewg <- (returnGameState newg)
 
+                        --Loops back to the begining for another turn
                         newGs <- mainLoop (b:w:[]) newNewg   -- TODO: Need to pass a NEW GameState as arg
                         return $ newGs
-                        -- but for some reason,
-                        --return $ mainLoop (b:w:[]) initBoard
-                        -- doesn't
+
                         else do
                         if (checkForWinner g == DRAW)
                         then putStrLn $ "It's a draw! You're all losers!"
@@ -162,13 +119,16 @@ printWinnerDoublePass b w (GameState _ _ _ _ board) = if (bp == wp)
 --then return the orginal gamestate, else update the gamestate with the new played moves and return it
 getGameStatePawnPlace :: Played -> Played -> GameState -> IO(GameState)
 getGameStatePawnPlace bpp wpp (GameState bplay bpen wplay wpen board) =
-  if (wpp /= None || bpp /= None)
+ if ((checkForWinner gs) /= NONE)
+ then 
+  return gs 
+ else if (wpp /= None || bpp /= None)
     then do
           x <- updateMoves bpp wpp (GameState bplay bpen wplay wpen board)
           putStrLn (show $ x)
           return x
     else return gs
-      where gs = (GameState bplay bpen wplay wpen board)
+ where gs = (GameState bplay bpen wplay wpen board)
 
 -- | Checks for pawnplacements or knight upgrades and return the correct played type
 -- this checks for the a pawn to be at the end of the board and checks for passes
