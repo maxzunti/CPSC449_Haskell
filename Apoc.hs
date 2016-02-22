@@ -29,8 +29,7 @@ import GameRules
 import StartupMod
 import System.Exit (exitSuccess)
 
---Custom Types------------------------------------------------------
---None, apparently
+
 
 ---Main-------------------------------------------------------------
 
@@ -42,9 +41,6 @@ main = main' (unsafePerformIO getArgs)
      1. call our program from GHCi in the usual way
      2. run from the command line by calling this function with the value from (getArgs)
 -}
-
---testFun :: GameState -> GameState
---testFun g = updateMoves (Played ((0, 3), ( 0, 2))) (Played ((4, 1), ( 4, 2))) g
 
 main'           :: [String] -> IO()
 main' args = do
@@ -102,19 +98,6 @@ mainLoop (b:w:[]) g =
 
                         newg <- findPlayed (fromJust bMove) (fromJust wMove) g
 
-                        --TODO: Check move legality, update board / penalty accordingly
-
-                        {-if (isValidMove (fromJust bMove) == VALID || CAPTURE)
-                          then newg <- updateMoves (Played (fromJust bMove !! 0,fromJust bMove !! 1)) (Played (fromJust wMove !! 0,fromJust wMove !! 1)) g
-                          else newg <- updateMoves (Goofed (fromJust bMove !! 0,fromJust bMove !! 1)) (Played (fromJust wMove !! 0,fromJust wMove !! 1)) (updatePenalty g Black)
-
-                          if (isValidMove (fromJust wMove) == VALID || CAPTURE)
-                            then newg <- updateMoves (Played (fromJust bMove !! 0,fromJust bMove !! 1)) (Played (fromJust wMove !! 0,fromJust wMove !! 1)) g
-                            else newg <- newg-}
-                        --TODO: newGS <- mainLoop (b:w:[]) updateGameState g
-
-                        --newg <- updateMoves (Played (fromJust bMove !! 0,fromJust bMove !! 1)) (Played (fromJust wMove !! 0,fromJust wMove !! 1)) g
-
                         --Print the board
                         putStrLn (show $ GameState (blackPlay newg) (blackPen newg) (whitePlay newg) (whitePen newg) (theBoard newg))
 
@@ -156,12 +139,12 @@ mainLoop (b:w:[]) g =
                             then putStrLn $ "White Wins!"
                             else putStrLn $ "Black Wins!"
                         return $ initBoard
-                        -- TODO: if (winner) then end, else
-                        --
+
 mainLoop _ _ = do putStrLn "Something broke"
                   exitSuccess
                   return $ initBoard
---black strat white strat gamestate
+
+--Prints the winner when two players passes on the same turn----------------
 printWinnerDoublePass :: Strat -> Strat -> GameState -> IO()
 printWinnerDoublePass b w (GameState _ _ _ _ board) = if (bp == wp)
                     then putStrLn $"Both Win! Black (" ++ (stratToString b) ++ "): " ++ (show bp) ++ "  White (" ++ (stratToString w) ++ "): " ++ (show wp)
@@ -172,6 +155,10 @@ printWinnerDoublePass b w (GameState _ _ _ _ board) = if (bp == wp)
                   wp = length (getAllPieceCoor 0 WP board)
 
 
+----------- PawnPlacement codes -----------------
+
+-- | Given two played move for PawnPlacement, if they are given none (no one has a pawn placement)
+--then return the orginal gamestate, else update the gamestate with the new played moves and return it
 getGameStatePawnPlace :: Played -> Played -> GameState -> IO(GameState)
 getGameStatePawnPlace bpp wpp (GameState bplay bpen wplay wpen board) =
   if (wpp /= None || bpp /= None)
@@ -182,6 +169,9 @@ getGameStatePawnPlace bpp wpp (GameState bplay bpen wplay wpen board) =
     else return gs
       where gs = (GameState bplay bpen wplay wpen board)
 
+-- | Checks for pawnplacements or knight upgrades and return the correct played type
+-- this checks for the a pawn to be at the end of the board and checks for passes
+--then calls findPawnPlay to contiue the checks
 findPawnPlay' :: [(Int,Int)] -> Strat -> Player -> GameState -> IO(Played)
 findPawnPlay' [] _ _ _ = return None
 findPawnPlay' (x:y:[]) s p (GameState a b c d board) = do
@@ -191,10 +181,9 @@ findPawnPlay' (x:y:[]) s p (GameState a b c d board) = do
                         else return None
                     else return None
 
+-- | Continues the pawn placement checks, and returns the correct pawnplacement move ()
 findPawnPlay :: [(Int,Int)] -> Strat -> Player -> GameState -> IO(Played)
 findPawnPlay (x:y:[]) s p (GameState a b c d board) = do
-
-                      --des <-  (getPawnPlaceMove s (GameState a b c d board) p) -- get pawn placement move
                       if (pawnPlacementCheck (x:y:[]) p)
                       then
                         if (p == White)
@@ -226,6 +215,7 @@ findPawnPlay (x:y:[]) s p (GameState a b c d board) = do
                                 else return $BadPlacedPawn (y, ((fromJust des) !! 0))
                       else return None
 
+-- | Checks that the pawn is at the end
 pawnPlacementCheck :: [(Int,Int)] -> Player -> Bool
 pawnPlacementCheck (_:(x, y):[]) p = if (p == White)
                                      then if (y == 4)
@@ -235,7 +225,7 @@ pawnPlacementCheck (_:(x, y):[]) p = if (p == White)
                                           then True
                                           else False
 
-
+-- | Get the moves for pawn placement based on strat
 getPawnPlaceMove :: Strat -> GameState ->  Player -> IO (Maybe [(Int,Int)])
 getPawnPlaceMove s g p  | (s == HUMAN) = do
                                         x <- human g PawnPlacement p
@@ -247,9 +237,7 @@ getPawnPlaceMove s g p  | (s == HUMAN) = do
                                         x <- knightStrat g PawnPlacement p
                                         return x
 
--- Invoke "human" or "knoight" Chooser based on passed Strat
--- Also determines if it should be a normal move or a pawn placement
-
+-- | Get the moves for a normal turn based on strat
 getStratMove :: Strat -> GameState ->  Player -> IO (Maybe [(Int,Int)])
 getStratMove s g p   | (s == HUMAN) = do
                                         x <- human g Normal p
@@ -282,7 +270,7 @@ findPlayed' b w g bPt wPt | (((isValidMove b g bPt Black)== VALID) || ((isValidM
                           | ((isValidMove b g bPt Black)== INVALID) && (((isValidMove w g wPt White) == VALID) || ((isValidMove w g wPt White) == CAPTURE)) = wValidOnly b w g bPt wPt
                           | otherwise = bwInvalid b w g bPt wPt
 
--- | The 'bwValid' function updates the gamestate based on both black and white having valid moves. 
+-- | The 'bwValid' function updates the gamestate based on both black and white having valid moves.
 bwValid :: [(Int,Int)] -> [(Int, Int)] -> GameState -> PlayType -> PlayType -> IO(GameState)
 bwValid [] [] (GameState bPlay bPen wPlay wPen board) bPt wPt = do
                                                                 x <- updateMoves (Passed) (Passed) (GameState bPlay bPen wPlay wPen board)
@@ -356,7 +344,7 @@ updateBoard (BadPlacedPawn (x,y)) b = b
 updateBoard (NullPlacedPawn) b = b
 updateBoard (None) b = b
 
-{- | This type is used by 'moveType' to tell the 'moveType' function whether the move is 
+{- | This type is used by 'moveType' to tell the 'moveType' function whether the move is
 of type normal, a miss capture, a double capture, or a swap.
 -}
 data MoveType = NORMALMOVE | MISSCAPTURE | DOUBLECAPTURE | SWAP deriving (Eq)
@@ -381,7 +369,7 @@ doublecapture (Played (x1,y1)) (Played (x2,y2)) b  | (((getFromBoard b x1) == BP
                                                    | ((getFromBoard b x1) == BK) = replace2 (replace2 (replace2 b y1 (getFromBoard b x1)) x1 E) x2 E
                                                    | ((getFromBoard b x2) == WK) = replace2 (replace2 (replace2 b y2 (getFromBoard b x2)) x2 E) x1 E
 
--- | The 'swap' function updates the board based on a swap move.							   
+-- | The 'swap' function updates the board based on a swap move.
 swap :: Played -> Played -> Cell -> Board -> Board
 swap (Played (x1,y1)) (Played (x2,y2)) c b = replace2 (replace2 b x1 (getFromBoard b x2)) x2 c
 
